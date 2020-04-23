@@ -157,16 +157,17 @@ def admin():
     is_admin_auth_enabled = bool(current_app.config["ADMIN_PASSWORD"])
     if request.method == "POST":
         client_ip = request.remote_addr
-        if not login_throttler.is_login_allowed(client_ip):
-            msg = _("Too many failed login attempts, please retry later.")
-            form.errors["admin_password"] = [msg]
-            return render_template(
-                "admin.html",
-                form=form,
-                admin_auth=True,
-                is_admin_auth_enabled=is_admin_auth_enabled,
-            )
         if form.validate():
+            if not login_throttler.is_login_allowed(client_ip):
+                msg = _("Too many failed login attempts, please retry later.")
+                form.errors["admin_password"] = [msg]
+                return render_template(
+                    "admin.html",
+                    form=form,
+                    admin_auth=True,
+                    is_admin_auth_enabled=is_admin_auth_enabled,
+                )
+
             # Valid password
             if check_password_hash(
                 current_app.config["ADMIN_PASSWORD"], form.admin_password.data
@@ -208,6 +209,7 @@ def authenticate(project_id=None):
         # User doesn't provide project identifier or a valid token
         # return to authenticate form
         msg = _("You either provided a bad token or no project identifier.")
+        form.validate()
         form.errors["id"] = [msg]
         return render_template("authenticate.html", form=form)
 

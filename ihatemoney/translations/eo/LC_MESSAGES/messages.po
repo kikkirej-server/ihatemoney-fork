@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-17 17:31+0200\n"
-"PO-Revision-Date: 2021-07-10 15:34+0000\n"
+"POT-Creation-Date: 2021-10-14 22:10+0200\n"
+"PO-Revision-Date: 2021-10-01 20:35+0000\n"
 "Last-Translator: phlostically <phlostically@mailinator.com>\n"
 "Language: eo\n"
 "Language-Team: Esperanto <https://hosted.weblate.org/projects/i-hate-"
@@ -13,7 +13,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.0\n"
+"Generated-By: Babel 2.9.1\n"
 
 msgid ""
 "Not a valid amount or expression. Only numbers and + - * / operators are "
@@ -73,16 +73,24 @@ msgstr ""
 "Projekto kun ĉi tiu identigilo («%(project)s») jam ekzistas. Bonvolu "
 "elekti alian identigilon"
 
-msgid "Enter private code to confirm deletion"
+msgid "Which is a real currency: Euro or Petro dollar?"
 msgstr ""
 
 #, fuzzy
-msgid "Unknown error"
-msgstr "Nekonata projekto"
+msgid "euro"
+msgstr "Periodo"
 
-#, fuzzy
+msgid "Please, validate the captcha to proceed."
+msgstr ""
+
+msgid "Enter private code to confirm deletion"
+msgstr ""
+
+msgid "Unknown error"
+msgstr "Nekonata eraro"
+
 msgid "Invalid private code."
-msgstr "Nova privata kodo"
+msgstr "Nevalida privata kodo."
 
 msgid "Get in"
 msgstr "Eniri"
@@ -175,30 +183,30 @@ msgstr "La retpoŝta adreso %(email)s ne validas"
 
 #. List with two items only
 msgid "{dual_object_0} and {dual_object_1}"
-msgstr ""
+msgstr "{dual_object_0} kaj {dual_object_1}"
 
 #. Last two items of a list with more than 3 items
 msgid "{previous_object}, and {end_object}"
-msgstr ""
+msgstr "{previous_object} kaj {end_object}"
 
 #. Two items in a middle of a list with more than 5 objects
 msgid "{previous_object}, {next_object}"
-msgstr ""
+msgstr "{previous_object}, {next_object}"
 
 #. First two items of a list with more than 3 items
 msgid "{start_object}, {next_object}"
-msgstr ""
+msgstr "{start_object}, {next_object}"
 
 msgid "No Currency"
 msgstr "Neniu valuto"
 
 #. Form error with only one error
 msgid "{prefix}: {error}"
-msgstr ""
+msgstr "{prefix}: {error}"
 
 #. Form error with a list of errors
 msgid "{prefix}:<br />{errors}"
-msgstr ""
+msgstr "{prefix}:<br />{errors}"
 
 msgid "Too many failed login attempts, please retry later."
 msgstr "Tro da malsukcesaj provoj de salutado; bonvolu reprovi poste."
@@ -207,8 +215,8 @@ msgstr "Tro da malsukcesaj provoj de salutado; bonvolu reprovi poste."
 msgid "This admin password is not the right one. Only %(num)d attempts left."
 msgstr "Ĉi tiu administra pasvorto ne estas ĝusta. Restas nur %(num)d provoj."
 
-msgid "You either provided a bad token or no project identifier."
-msgstr "Vi donis aŭ nevalidan ĵetonon aŭ neniun identigilon de projekto."
+msgid "Provided token is invalid"
+msgstr ""
 
 msgid "This private code is not the right one"
 msgstr "Ĉi tiu privata kodo ne ĝustas"
@@ -257,6 +265,11 @@ msgstr "Projekto sukcese alŝutita"
 
 msgid "Invalid JSON"
 msgstr "Nevalida JSON"
+
+msgid ""
+"Cannot add bills in multiple currencies to a project without default "
+"currency"
+msgstr ""
 
 msgid "Project successfully deleted"
 msgstr "La projekto estis sukcese forigitaj"
@@ -396,16 +409,14 @@ msgstr "Elŝuti programon por poŝaparato"
 msgid "Get it on"
 msgstr "Elŝuti ĝin ĉe"
 
-#, fuzzy
 msgid "Are you sure?"
-msgstr "ĉu vi certas?"
+msgstr "Ĉu vi certas?"
 
 msgid "Edit project"
 msgstr "Redakti projekton"
 
-#, fuzzy
 msgid "Delete project"
-msgstr "Redakti projekton"
+msgstr "Forviŝi projekton"
 
 msgid "Import JSON"
 msgstr "Enporti JSON-dosieron"
@@ -453,7 +464,7 @@ msgid "Everyone"
 msgstr "Ĉiuj"
 
 msgid "No one"
-msgstr ""
+msgstr "Neniu"
 
 msgid "More options"
 msgstr ""
@@ -986,3 +997,7 @@ msgstr "Periodo"
 
 #~ msgid "removed"
 #~ msgstr "forigis"
+
+#~ msgid "You either provided a bad token or no project identifier."
+#~ msgstr "Vi donis aŭ nevalidan ĵetonon aŭ neniun identigilon de projekto."
+

@@ -143,7 +143,8 @@ def pull_project(endpoint, values):
             raise Redirect303(url_for(".create_project", project_id=project_id))
 
         is_admin = session.get("is_admin")
-        if session.get(project.id) or is_admin:
+        is_invitation = endpoint == "main.join_project"
+        if session.get(project.id) or is_admin or is_invitation:
             # add project into kwargs and call the original function
             g.project = project
         else:
@@ -195,28 +196,38 @@ def admin():
     )
 
 
+@main.route("/<project_id>/join/<string:token>", methods=["GET"])
+def join_project(token):
+    project_id = g.project.id
+    verified_project_id = Project.verify_token(
+        token, token_type="auth", project_id=project_id
+    )
+    if verified_project_id != project_id:
+        flash(_("Provided token is invalid"), "danger")
+        return redirect("/")
+
+    # maintain a list of visited projects
+    if "projects" not in session:
+        session["projects"] = []
+    # add the project on the top of the list
+    session["projects"].insert(0, (project_id, g.project.name))
+    session[project_id] = True
+    # Set session to permanent to make language choice persist
+    session.permanent = True
+    session.update()
+    return redirect(url_for(".list_bills"))
+
+
 @main.route("/authenticate", methods=["GET", "POST"])
 def authenticate(project_id=None):
     """Authentication form"""
     form = AuthenticationForm()
-    # Try to get project_id from token first
-    token = request.args.get("token")
-    if token:
-        project_id = Project.verify_token(token, token_type="non_timed_token")
-        token_auth = True
-    else:
-        if not form.id.data and request.args.get("project_id"):
-            form.id.data = request.args["project_id"]
-        project_id = form.id.data
-        token_auth = False
-    if project_id is None:
-        # User doesn't provide project identifier or a valid token
-        # return to authenticate form
-        msg = _("You either provided a bad token or no project identifier.")
-        form["id"].errors = [msg]
-        return render_template("authenticate.html", form=form)
 
-    project = Project.query.get(project_id)
+    if not form.id.data and request.args.get("project_id"):
+        form.id.data = request.args["project_id"]
+    project_id = form.id.data
+
+    project = Project.query.get(project_id) if project_id is not None else None
     if not project:
         # If the user try to connect to an unexisting project, we will
         # propose him a link to the creation form.
@@ -229,13 +240,9 @@ def authenticate(project_id=None):
         setattr(g, "project", project)
         return redirect(url_for(".list_bills"))
 
-    # else do form authentication or token authentication
+    # else do form authentication authentication
     is_post_auth = request.method == "POST" and form.validate()
-    if (
-        is_post_auth
-        and check_password_hash(project.password, form.password.data)
-        or token_auth
-    ):
+    if is_post_auth and check_password_hash(project.password, form.password.data):
         # maintain a list of visited projects
         if "projects" not in session:
             session["projects"] = []
@@ -254,9 +261,16 @@ def authenticate(project_id=None):
     return render_template("authenticate.html", form=form)
 
 
+def get_project_form():
+    if current_app.config.get("ENABLE_CAPTCHA", False):
+        ProjectForm.enable_captcha()
+
+    return ProjectForm()
+
+
 @main.route("/", strict_slashes=False)
 def home():
-    project_form = ProjectForm()
+    project_form = get_project_form()
     auth_form = AuthenticationForm()
     is_demo_project_activated = current_app.config["ACTIVATE_DEMO_PROJECT"]
     is_public_project_creation_allowed = current_app.config[
@@ -281,7 +295,7 @@ def mobile():
 @main.route("/create", methods=["GET", "POST"])
 @requires_admin(bypass=("ALLOW_PUBLIC_PROJECT_CREATION", True))
 def create_project():
-    form = ProjectForm()
+    form = get_project_form()
     if request.method == "GET" and "project_id" in request.values:
         form.name.data = request.values["project_id"]
 
@@ -381,7 +395,7 @@ def reset_password():
         return render_template(
             "reset_password.html", form=form, error=_("No token provided")
         )
-    project_id = Project.verify_token(token)
+    project_id = Project.verify_token(token, token_type="reset")
     if not project_id:
         return render_template(
             "reset_password.html", form=form, error=_("Invalid token")

@@ -50,27 +50,38 @@ class BaseTestCase(TestCase):
             follow_redirects=True,
         )
 
-    def post_project(self, name, follow_redirects=True, default_currency="XXX"):
+    def post_project(
+        self,
+        id,
+        follow_redirects=True,
+        default_currency="XXX",
+        name=None,
+        password=None,
+    ):
         """Create a fake project"""
+        name = name or id
+        password = password or id
         # create the project
         return self.client.post(
             "/create",
             data={
                 "name": name,
-                "id": name,
-                "password": name,
-                "contact_email": f"{name}@notmyidea.org",
+                "id": id,
+                "password": password,
+                "contact_email": f"{id}@notmyidea.org",
                 "default_currency": default_currency,
             },
             follow_redirects=follow_redirects,
         )
 
-    def create_project(self, name, default_currency="XXX"):
+    def create_project(self, id, default_currency="XXX", name=None, password=None):
+        name = name or str(id)
+        password = password or id
         project = models.Project(
-            id=name,
-            name=str(name),
-            password=generate_password_hash(name),
-            contact_email=f"{name}@notmyidea.org",
+            id=id,
+            name=name,
+            password=generate_password_hash(password),
+            contact_email=f"{id}@notmyidea.org",
             default_currency=default_currency,
         )
         models.db.session.add(project)

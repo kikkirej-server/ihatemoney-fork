@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-14 22:10+0200\n"
+"POT-Creation-Date: 2021-11-01 18:01+0100\n"
 "PO-Revision-Date: 2020-06-14 14:41+0000\n"
 "Last-Translator: raghupalash <singhpalash0@gmail.com>\n"
 "Language: hi\n"
@@ -13,7 +13,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.9.0\n"
 
 msgid ""
 "Not a valid amount or expression. Only numbers and + - * / operators are "
@@ -43,6 +43,9 @@ msgstr "प्रोजेक्ट इतिहास के लिए IP ट�
 
 msgid "Default Currency"
 msgstr "डिफ़ॉल्ट मुद्रा"
+
+msgid "Setting a default currency enables currency conversion between bills"
+msgstr ""
 
 msgid ""
 "This project cannot be set to 'no currency' because it contains bills in "
@@ -166,14 +169,16 @@ msgstr "वजन"
 msgid "Add"
 msgstr "जोड़ें"
 
-msgid "User name incorrect"
-msgstr "उपयोगकर्ता नाम गलत है"
+#, fuzzy
+msgid "The participant name is invalid"
+msgstr "उपयोगकर्ता '%(name)s' को हटा दिया गया है"
 
-msgid "This project already have this member"
+#, fuzzy
+msgid "This project already have this participant"
 msgstr "इस परियोजना में पहले से ही यह सदस्य है"
 
 msgid "People to notify"
-msgstr "सूचित किये जाने वाले लोग"
+msgstr ""
 
 msgid "Send invites"
 msgstr "आमंत्रण भेजें"
@@ -299,31 +304,31 @@ msgstr ""
 msgid "%(member)s has been added"
 msgstr "%(member)s को जोड़ लिया गया है"
 
-msgid "Error activating member"
+msgid "Error activating participant"
 msgstr ""
 
 #, python-format
 msgid "%(name)s is part of this project again"
 msgstr "%(name)s फिर से इस परियोजना का हिस्सा है"
 
-msgid "Error removing member"
+msgid "Error removing participant"
 msgstr ""
 
-#, python-format
+#, fuzzy, python-format
 msgid ""
-"User '%(name)s' has been deactivated. It will still appear in the users "
-"list until its balance becomes zero."
+"Participant '%(name)s' has been deactivated. It will still appear in the "
+"list until its balance reach zero."
 msgstr ""
 "उपयोगकर्ता '%(name)s' को निष्क्रिय कर दिया गया है। यह तब भी उपयोगकर्ताओं "
 "की सूची में दिखाई देगा जब तक कि इसका संतुलन शून्य नहीं हो जाता।"
 
-#, python-format
-msgid "User '%(name)s' has been removed"
+#, fuzzy, python-format
+msgid "Participant '%(name)s' has been removed"
 msgstr "उपयोगकर्ता '%(name)s' को हटा दिया गया है"
 
-#, python-format
-msgid "User '%(name)s' has been edited"
-msgstr "उपयोगकर्ता '%(name)s' को संपादित कर दिया गया है"
+#, fuzzy, python-format
+msgid "Participant '%(name)s' has been modified"
+msgstr "उपयोगकर्ता '%(name)s' को हटा दिया गया है"
 
 msgid "The bill has been added"
 msgstr "बिल जोड़ दिया गया है"
@@ -364,6 +369,10 @@ msgstr "सूची में वापस जाएँ"
 msgid "Administration tasks are currently disabled."
 msgstr "वर्तमान में प्रबंधन कार्य अक्षम हैं।"
 
+#, fuzzy
+msgid "Authentication"
+msgstr "प्रलेखन"
+
 msgid "The project you are trying to access do not exist, do you want to"
 msgstr ""
 "जिस प्रोजेक्ट पर आप पहुचने की कोशिश कर रहे हैं, वह मौजूद नहीं है, क्या आप"
@@ -381,8 +390,9 @@ msgstr "नयी परियोजना बनाये"
 msgid "Project"
 msgstr "परियोजना"
 
-msgid "Number of members"
-msgstr "सदस्यों की संख्या"
+#, fuzzy
+msgid "Number of participants"
+msgstr "प्रतिभागियों को जोड़ें"
 
 msgid "Number of bills"
 msgstr "बिलों की संख्या"
@@ -481,8 +491,9 @@ msgstr ""
 msgid "Add participant"
 msgstr "प्रतिभागी जोड़ें"
 
-msgid "Edit this member"
-msgstr "इस सदस्य को संपादित करें"
+#, fuzzy
+msgid "Edit this participant"
+msgstr "प्रतिभागी जोड़ें"
 
 msgid "john.doe@example.com, mary.moe@site.com"
 msgstr "john.doe@example.com, mary.moe@site.com"
@@ -646,7 +657,7 @@ msgstr "परियोजना के निजी कोड को बदल 
 
 #, fuzzy, python-format
 msgid "Project renamed to %(new_project_name)s"
-msgstr "प्रोजेक्ट पहचानकर्ता %(project)s है"
+msgstr "प्रोजेक्ट पहचानकर्ता %(new_project_name)s है"
 
 #, fuzzy, python-format
 msgid "Project contact email changed to %(new_email)s"
@@ -803,6 +814,10 @@ msgstr "प्रलेखन"
 
 msgid "Administation Dashboard"
 msgstr "व्यवस्थापन डैशबोर्ड"
+
+#, fuzzy
+msgid "Legal information"
+msgstr "पुष्टिकरण हटाएं"
 
 msgid "\"I hate money\" is free software"
 msgstr "\"I hate money\" एक मुफ्त सॉफ्टवेयर है"
@@ -1015,3 +1030,8 @@ msgstr "अवधि"
 #~ "किया है या कोई प्रोजेक्ट पहचानकर्ता "
 #~ "नहीं है।"
 
+#~ msgid "User name incorrect"
+#~ msgstr "उपयोगकर्ता नाम गलत है"
+
+#~ msgid "People to notify"
+#~ msgstr "सूचित किये जाने वाले लोग"

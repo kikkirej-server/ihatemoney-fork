@@ -37,6 +37,7 @@ from werkzeug.exceptions import NotFound
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ihatemoney.currency_convertor import CurrencyConverter
+from ihatemoney.emails import send_creation_email
 from ihatemoney.forms import (
     AdminAuthenticationForm,
     AuthenticationForm,
@@ -47,6 +48,7 @@ from ihatemoney.forms import (
     MemberForm,
     PasswordReminder,
     ProjectForm,
+    ProjectFormWithCaptcha,
     ResetPasswordForm,
     UploadForm,
     get_billform_for,
@@ -73,7 +75,7 @@ login_throttler = LoginThrottler(max_attempts=3, delay=1)
 def requires_admin(bypass=None):
     """Require admin permissions for @requires_admin decorated endpoints.
 
-    This has no effect if ADMIN_PASSWORD is empty.
+    This has no effect if the ADMIN_PASSWORD is empty.
 
     :param bypass: Used to conditionnaly bypass the admin authentication.
                    It expects a tuple containing the name of an application
@@ -136,8 +138,9 @@ def pull_project(endpoint, values):
         return
     if not values:
         values = {}
-    project_id = values.pop("project_id", None)
-    if project_id:
+    entered_project_id = values.pop("project_id", None)
+    if entered_project_id:
+        project_id = entered_project_id.lower()
         project = Project.query.get(project_id)
         if not project:
             raise Redirect303(url_for(".create_project", project_id=project_id))
@@ -150,6 +153,11 @@ def pull_project(endpoint, values):
         else:
             # redirect to authentication page
             raise Redirect303(url_for(".authenticate", project_id=project_id))
+
+
+@main.route("/healthcheck", methods=["GET"])
+def health():
+    return "OK"
 
 
 @main.route("/admin", methods=["GET", "POST"])
@@ -225,7 +233,7 @@ def authenticate(project_id=None):
 
     if not form.id.data and request.args.get("project_id"):
         form.id.data = request.args["project_id"]
-    project_id = form.id.data
+    project_id = form.id.data.lower() if form.id.data else None
 
     project = Project.query.get(project_id) if project_id is not None else None
     if not project:
@@ -263,8 +271,7 @@ def authenticate(project_id=None):
 
 def get_project_form():
     if current_app.config.get("ENABLE_CAPTCHA", False):
-        ProjectForm.enable_captcha()
-
+        return ProjectFormWithCaptcha()
     return ProjectForm()
 
 
@@ -319,18 +326,7 @@ def create_project():
 
             # send reminder email
             g.project = project
-
-            message_title = _(
-                "You have just created '%(project)s' " "to share your expenses",
-                project=g.project.name,
-            )
-
-            message_body = render_localized_template("reminder_mail")
-
-            msg = Message(
-                message_title, body=message_body, recipients=[project.contact_email]
-            )
-            success = send_email(msg)
+            success = send_creation_email(project)
             if success:
                 flash(
                     _("A reminder email has just been sent to you"), category="success"
@@ -345,8 +341,6 @@ def create_project():
                     ),
                     category="info",
                 )
-            # redirect the user to the next step (invite)
-            flash(_("The project identifier is %(project)s", project=project.id))
             return redirect(url_for(".list_bills", project_id=project.id))
 
     return render_template("create_project.html", form=form)
@@ -697,7 +691,10 @@ def reactivate(member_id):
     # Used for CSRF validation
     form = EmptyForm()
     if not form.validate():
-        flash(format_form_errors(form, _("Error activating member")), category="danger")
+        flash(
+            format_form_errors(form, _("Error activating participant")),
+            category="danger",
+        )
         return redirect(url_for(".list_bills"))
 
     person = (
@@ -717,7 +714,9 @@ def remove_member(member_id):
     # Used for CSRF validation
     form = EmptyForm()
     if not form.validate():
-        flash(format_form_errors(form, _("Error removing member")), category="danger")
+        flash(
+            format_form_errors(form, _("Error removing participant")), category="danger"
+        )
         return redirect(url_for(".list_bills"))
 
     member = g.project.remove_member(member_id)
@@ -725,14 +724,13 @@ def remove_member(member_id):
         if not member.activated:
             flash(
                 _(
-                    "User '%(name)s' has been deactivated. It will still "
-                    "appear in the users list until its balance "
-                    "becomes zero.",
+                    "Participant '%(name)s' has been deactivated. It will still "
+                    "appear in the list until its balance reach zero.",
                     name=member.name,
                 )
             )
         else:
-            flash(_("User '%(name)s' has been removed", name=member.name))
+            flash(_("Participant '%(name)s' has been removed", name=member.name))
     return redirect(url_for(".list_bills"))
 
 
@@ -746,7 +744,7 @@ def edit_member(member_id):
     if request.method == "POST" and form.validate():
         form.save(g.project, member)
         db.session.commit()
-        flash(_("User '%(name)s' has been edited", name=member.name))
+        flash(_("Participant '%(name)s' has been modified", name=member.name))
         return redirect(url_for(".list_bills"))
 
     form.fill(member)
@@ -894,7 +892,7 @@ def strip_ip_addresses():
 
 @main.route("/<project_id>/statistics")
 def statistics():
-    """Compute what each member has paid and spent and display it"""
+    """Compute what each participant has paid and spent and display it"""
     today = datetime.now()
     return render_template(
         "statistics.html",

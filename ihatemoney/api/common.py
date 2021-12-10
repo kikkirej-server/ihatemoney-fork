@@ -5,6 +5,7 @@ from flask_restful import Resource, abort
 from werkzeug.security import check_password_hash
 from wtforms.fields.core import BooleanField
 
+from ihatemoney.emails import send_creation_email
 from ihatemoney.forms import EditProjectForm, MemberForm, ProjectForm, get_billform_for
 from ihatemoney.models import Bill, Person, Project, db
 
@@ -18,11 +19,11 @@ def need_auth(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         auth = request.authorization
-        project_id = kwargs.get("project_id")
+        project_id = kwargs.get("project_id").lower()
 
         # Use Basic Auth
-        if auth and project_id and auth.username == project_id:
-            project = Project.query.get(auth.username)
+        if auth and project_id and auth.username.lower() == project_id:
+            project = Project.query.get(auth.username.lower())
             if project and check_password_hash(project.password, auth.password):
                 # The whole project object will be passed instead of project_id
                 kwargs.pop("project_id")
@@ -55,6 +56,7 @@ class ProjectsHandler(Resource):
             project = form.save()
             db.session.add(project)
             db.session.commit()
+            send_creation_email(project)
             return project.id, 201
         return form.errors, 400
 
@@ -75,6 +77,7 @@ class ProjectHandler(Resource):
         if form.validate() and current_app.config.get("ALLOW_PUBLIC_PROJECT_CREATION"):
             form.update(project)
             db.session.commit()
+            send_creation_email(project)
             return "UPDATED"
         return form.errors, 400
 

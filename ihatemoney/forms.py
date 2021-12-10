@@ -41,8 +41,8 @@ def strip_filter(string):
 def get_billform_for(project, set_default=True, **kwargs):
     """Return an instance of BillForm configured for a particular project.
 
-    :set_default: if set to True, on GET methods (usually when we want to
-                  display the default form, it will call set_default on it.
+    :set_default: if set to True, it will call set_default on GET methods (usually
+                  when we want to display the default form).
 
     """
     form = BillForm(**kwargs)
@@ -117,6 +117,9 @@ class EditProjectForm(FlaskForm):
         _("Default Currency"),
         validators=[DataRequired()],
         default=CurrencyConverter.no_currency,
+        description=_(
+            "Setting a default currency enables currency conversion between bills"
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -225,13 +228,11 @@ class ProjectForm(EditProjectForm):
             )
             raise ValidationError(Markup(message))
 
-    @classmethod
-    def enable_captcha(cls):
-        captchaField = StringField(
-            _("Which is a real currency: Euro or Petro dollar?"),
-            validators=[DataRequired()],
-        )
-        setattr(cls, "captcha", captchaField)
+
+class ProjectFormWithCaptcha(ProjectForm):
+    captcha = StringField(
+        _("Which is a real currency: Euro or Petro dollar?"),
+    )
 
     def validate_captcha(form, field):
         if not field.data.lower() == _("euro"):
@@ -245,9 +246,8 @@ class DestructiveActionProjectForm(FlaskForm):
     - delete project itself
     - delete history
     - delete IP addresses in history
-    - possibly others in the future
 
-    It asks the user to enter the private code to confirm deletion.
+    It asks the participant to enter the private code to confirm deletion.
     """
 
     password = PasswordField(
@@ -302,10 +302,10 @@ class ResetPasswordForm(FlaskForm):
 
 
 class BillForm(FlaskForm):
-    date = DateField(_("Date"), validators=[DataRequired()], default=datetime.now)
+    date = DateField(_("When?"), validators=[DataRequired()], default=datetime.now)
     what = StringField(_("What?"), validators=[DataRequired()])
-    payer = SelectField(_("Payer"), validators=[DataRequired()], coerce=int)
-    amount = CalculatorStringField(_("Amount paid"), validators=[DataRequired()])
+    payer = SelectField(_("Who paid?"), validators=[DataRequired()], coerce=int)
+    amount = CalculatorStringField(_("How much?"), validators=[DataRequired()])
     currency_helper = CurrencyConverter()
     original_currency = SelectField(_("Currency"), validators=[DataRequired()])
     external_link = URLField(
@@ -385,7 +385,7 @@ class MemberForm(FlaskForm):
 
     def validate_name(form, field):
         if field.data == form.name.default:
-            raise ValidationError(_("User name incorrect"))
+            raise ValidationError(_("The participant name is invalid"))
         if (
             not form.edit
             and Person.query.filter(
@@ -394,7 +394,7 @@ class MemberForm(FlaskForm):
                 Person.activated,
             ).all()
         ):  # NOQA
-            raise ValidationError(_("This project already have this member"))
+            raise ValidationError(_("This project already have this participant"))
 
     def save(self, project, person):
         # if the user is already bound to the project, just reactivate him

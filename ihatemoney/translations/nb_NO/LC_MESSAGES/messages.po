@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-14 22:10+0200\n"
+"POT-Creation-Date: 2021-11-01 18:01+0100\n"
 "PO-Revision-Date: 2021-07-18 20:48+0000\n"
 "Last-Translator: Allan Nordhøy <epost@anotheragency.no>\n"
 "Language: nb_NO\n"
@@ -13,7 +13,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.9.0\n"
 
 msgid ""
 "Not a valid amount or expression. Only numbers and + - * / operators are "
@@ -42,6 +42,9 @@ msgstr "Bruk IP-sporing for prosjekthistorikk"
 
 msgid "Default Currency"
 msgstr "Forvalgt valuta"
+
+msgid "Setting a default currency enables currency conversion between bills"
+msgstr ""
 
 #, fuzzy
 msgid ""
@@ -168,14 +171,15 @@ msgid "Add"
 msgstr "Legg til"
 
 #, fuzzy
-msgid "User name incorrect"
-msgstr "Feil brukernavn"
+msgid "The participant name is invalid"
+msgstr "Deltageren %(name)s ble reaktivert"
 
-msgid "This project already have this member"
+#, fuzzy
+msgid "This project already have this participant"
 msgstr "Allerede medlem av prosjektet"
 
 msgid "People to notify"
-msgstr "Folk å sende merknad til"
+msgstr ""
 
 msgid "Send invites"
 msgstr "Send invitasjoner"
@@ -309,7 +313,7 @@ msgid "%(member)s has been added"
 msgstr "%(member)s har blitt lagt til"
 
 #, fuzzy
-msgid "Error activating member"
+msgid "Error activating participant"
 msgstr "Kunne ikke aktivere medlem"
 
 #, python-format
@@ -317,24 +321,24 @@ msgid "%(name)s is part of this project again"
 msgstr "%(name)s er en del av dette prosjektet igjen"
 
 #, fuzzy
-msgid "Error removing member"
+msgid "Error removing participant"
 msgstr "Klarte ikke å fjerne medlem"
 
-#, python-format
+#, fuzzy, python-format
 msgid ""
-"User '%(name)s' has been deactivated. It will still appear in the users "
-"list until its balance becomes zero."
+"Participant '%(name)s' has been deactivated. It will still appear in the "
+"list until its balance reach zero."
 msgstr ""
 "Brukeren \"%(name)s\" har blitt avskrudd. Vedkommende vil still fremtre i"
 " brukerlisten til dens konto går tom."
 
-#, python-format
-msgid "User '%(name)s' has been removed"
+#, fuzzy, python-format
+msgid "Participant '%(name)s' has been removed"
 msgstr "Brukeren \"%(name)s\" har blitt fjernet"
 
-#, python-format
-msgid "User '%(name)s' has been edited"
-msgstr "Brukeren \"%(name)s\" har blitt endret"
+#, fuzzy, python-format
+msgid "Participant '%(name)s' has been modified"
+msgstr "Deltageren %(name)s ble endret"
 
 msgid "The bill has been added"
 msgstr "Regningen har blitt lagt til"
@@ -377,6 +381,10 @@ msgstr "Tilbake til listen"
 msgid "Administration tasks are currently disabled."
 msgstr "Administratoroppgaver er for tiden avskrudd."
 
+#, fuzzy
+msgid "Authentication"
+msgstr "Dokumentasjon"
+
 msgid "The project you are trying to access do not exist, do you want to"
 msgstr "Prosjektet du prøver å få tilgang til finnes ikke. Ønsker du å"
 
@@ -392,8 +400,9 @@ msgstr "Opprett et nytt prosjekt"
 msgid "Project"
 msgstr "Prosjekt"
 
-msgid "Number of members"
-msgstr "Antall medlemmer"
+#, fuzzy
+msgid "Number of participants"
+msgstr "legge til deltagere"
 
 msgid "Number of bills"
 msgstr "Antall regninger"
@@ -493,8 +502,9 @@ msgstr "Flere valg"
 msgid "Add participant"
 msgstr "Legg til deltager"
 
-msgid "Edit this member"
-msgstr "Rediger dette medlemmet"
+#, fuzzy
+msgid "Edit this participant"
+msgstr "Legg til deltager"
 
 #, fuzzy
 msgid "john.doe@example.com, mary.moe@site.com"
@@ -831,6 +841,10 @@ msgstr "Dokumentasjon"
 
 msgid "Administation Dashboard"
 msgstr "Administrasjonsoversiktspanel"
+
+#, fuzzy
+msgid "Legal information"
+msgstr "Slettingsbekreftelse"
 
 #, fuzzy
 msgid "\"I hate money\" is free software"
@@ -1193,4 +1207,22 @@ msgstr "Periode"
 #~ msgstr ""
 #~ "Du har enten oppgitt et feilaktig "
 #~ "symbol, eller utelot prosjektidentifikator."
+
+#~ msgid "User name incorrect"
+#~ msgstr "Feil brukernavn"
+
+#~ msgid "People to notify"
+#~ msgstr "Folk å sende merknad til"
+
+#~ msgid "User '%(name)s' has been edited"
+#~ msgstr "Brukeren \"%(name)s\" har blitt endret"
+
+#~ msgid "Number of members"
+#~ msgstr "Antall medlemmer"
+
+#~ msgid "Edit this member"
+#~ msgstr "Rediger dette medlemmet"
+
+#~ msgid "Participants to notify"
+#~ msgstr "legge til deltagere"
 

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-14 22:10+0200\n"
+"POT-Creation-Date: 2021-11-01 18:01+0100\n"
 "PO-Revision-Date: 2021-08-31 18:34+0000\n"
 "Last-Translator: Michał Kowalski <norbertkowalski1994@gmail.com>\n"
 "Language: pl\n"
@@ -14,7 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.9.0\n"
 
 msgid ""
 "Not a valid amount or expression. Only numbers and + - * / operators are "
@@ -43,6 +43,9 @@ msgstr "Użyj śledzenia IP do historii projektu"
 
 msgid "Default Currency"
 msgstr "Domyślna waluta"
+
+msgid "Setting a default currency enables currency conversion between bills"
+msgstr ""
 
 msgid ""
 "This project cannot be set to 'no currency' because it contains bills in "
@@ -164,14 +167,16 @@ msgstr "Waga"
 msgid "Add"
 msgstr "Dodaj"
 
-msgid "User name incorrect"
-msgstr "Nazwa użytkownika jest niepoprawna"
+#, fuzzy
+msgid "The participant name is invalid"
+msgstr "Użytkownik „%(name)s” został usunięty"
 
-msgid "This project already have this member"
+#, fuzzy
+msgid "This project already have this participant"
 msgstr "Ten projekt ma już tego członka"
 
 msgid "People to notify"
-msgstr "Osoby do powiadomienia"
+msgstr ""
 
 msgid "Send invites"
 msgstr "Wyślij zaproszenia"
@@ -296,31 +301,31 @@ msgstr ""
 msgid "%(member)s has been added"
 msgstr "%(member)s został dodany"
 
-msgid "Error activating member"
+msgid "Error activating participant"
 msgstr ""
 
 #, python-format
 msgid "%(name)s is part of this project again"
 msgstr "%(name)s jest ponownie częścią tego projektu"
 
-msgid "Error removing member"
+msgid "Error removing participant"
 msgstr ""
 
-#, python-format
+#, fuzzy, python-format
 msgid ""
-"User '%(name)s' has been deactivated. It will still appear in the users "
-"list until its balance becomes zero."
+"Participant '%(name)s' has been deactivated. It will still appear in the "
+"list until its balance reach zero."
 msgstr ""
 "Użytkownik „%(name)s” został dezaktywowany. Będzie nadal pojawiać się na "
 "liście użytkowników, dopóki jego saldo nie wyniesie zero."
 
-#, python-format
-msgid "User '%(name)s' has been removed"
+#, fuzzy, python-format
+msgid "Participant '%(name)s' has been removed"
 msgstr "Użytkownik „%(name)s” został usunięty"
 
-#, python-format
-msgid "User '%(name)s' has been edited"
-msgstr "Użytkownik „%(name)s” został edytowany"
+#, fuzzy, python-format
+msgid "Participant '%(name)s' has been modified"
+msgstr "Użytkownik „%(name)s” został usunięty"
 
 msgid "The bill has been added"
 msgstr "Rachunek został dodany"
@@ -363,6 +368,10 @@ msgstr "Powrót do listy"
 msgid "Administration tasks are currently disabled."
 msgstr "Zadania administracyjne są obecnie wyłączone."
 
+#, fuzzy
+msgid "Authentication"
+msgstr "Dokumentacja"
+
 msgid "The project you are trying to access do not exist, do you want to"
 msgstr "Projekt, do którego próbujesz uzyskać dostęp, nie istnieje, czy chcesz"
 
@@ -378,8 +387,9 @@ msgstr "Stwórz nowy projekt"
 msgid "Project"
 msgstr "Projekt"
 
-msgid "Number of members"
-msgstr "Liczba użytkowników"
+#, fuzzy
+msgid "Number of participants"
+msgstr "dodać członków"
 
 msgid "Number of bills"
 msgstr "Liczba rachunków"
@@ -478,8 +488,9 @@ msgstr ""
 msgid "Add participant"
 msgstr "Dodaj uczestnika"
 
-msgid "Edit this member"
-msgstr "Edytuj tego członka"
+#, fuzzy
+msgid "Edit this participant"
+msgstr "Dodaj uczestnika"
 
 msgid "john.doe@example.com, mary.moe@site.com"
 msgstr "jan.kowalski@przykład.com, anna.nowak@strona.com"
@@ -643,7 +654,7 @@ msgstr "Prywatny kod projektu został zmieniony"
 
 #, fuzzy, python-format
 msgid "Project renamed to %(new_project_name)s"
-msgstr "Identyfikator projektu to %(project)s"
+msgstr "Identyfikator projektu to %(new_project_name)s"
 
 #, fuzzy, python-format
 msgid "Project contact email changed to %(new_email)s"
@@ -800,6 +811,10 @@ msgstr "Dokumentacja"
 
 msgid "Administation Dashboard"
 msgstr "Kokpit administracyjny"
+
+#, fuzzy
+msgid "Legal information"
+msgstr "Usuń potwierdzenie"
 
 msgid "\"I hate money\" is free software"
 msgstr "„I Hate Money” to darmowe oprogramowanie"
@@ -1031,3 +1046,8 @@ msgstr "Okres"
 #~ msgid "You either provided a bad token or no project identifier."
 #~ msgstr "Podałeś zły token lub brak identyfikatora projektu."
 
+#~ msgid "User name incorrect"
+#~ msgstr "Nazwa użytkownika jest niepoprawna"
+
+#~ msgid "People to notify"
+#~ msgstr "Osoby do powiadomienia"

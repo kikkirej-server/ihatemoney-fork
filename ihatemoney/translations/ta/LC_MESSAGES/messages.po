@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-14 22:10+0200\n"
+"POT-Creation-Date: 2021-11-01 18:01+0100\n"
 "PO-Revision-Date: 2020-07-01 18:41+0000\n"
 "Last-Translator: rohitn01 <rohitmen01@gmail.com>\n"
 "Language: ta\n"
@@ -13,7 +13,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.9.0\n"
 
 msgid ""
 "Not a valid amount or expression. Only numbers and + - * / operators are "
@@ -43,6 +43,9 @@ msgstr "திட்ட வரலாற்றுக்கு ஐபி கண்
 
 msgid "Default Currency"
 msgstr "இயல்புநிலை நாணயம்"
+
+msgid "Setting a default currency enables currency conversion between bills"
+msgstr ""
 
 msgid ""
 "This project cannot be set to 'no currency' because it contains bills in "
@@ -165,14 +168,15 @@ msgstr "எடை"
 msgid "Add"
 msgstr "கூட்டு"
 
-msgid "User name incorrect"
-msgstr "பயனர் பெயர் தவறானது"
+msgid "The participant name is invalid"
+msgstr ""
 
-msgid "This project already have this member"
+#, fuzzy
+msgid "This project already have this participant"
 msgstr "இந்த திட்டத்தில் ஏற்கனவே இந்த உறுப்பினர் இருக்கிறார்"
 
 msgid "People to notify"
-msgstr "அறிவிக்க வேண்டியவர்கள்"
+msgstr ""
 
 msgid "Send invites"
 msgstr "அழைப்புகளை அனுப்பு"
@@ -301,28 +305,28 @@ msgstr ""
 msgid "%(member)s has been added"
 msgstr "%(member)s இணைக்கப்பட்டு விட்டது"
 
-msgid "Error activating member"
+msgid "Error activating participant"
 msgstr ""
 
 #, python-format
 msgid "%(name)s is part of this project again"
 msgstr ""
 
-msgid "Error removing member"
+msgid "Error removing participant"
 msgstr ""
 
 #, python-format
 msgid ""
-"User '%(name)s' has been deactivated. It will still appear in the users "
-"list until its balance becomes zero."
+"Participant '%(name)s' has been deactivated. It will still appear in the "
+"list until its balance reach zero."
 msgstr ""
 
 #, python-format
-msgid "User '%(name)s' has been removed"
+msgid "Participant '%(name)s' has been removed"
 msgstr ""
 
 #, python-format
-msgid "User '%(name)s' has been edited"
+msgid "Participant '%(name)s' has been modified"
 msgstr ""
 
 msgid "The bill has been added"
@@ -363,6 +367,9 @@ msgstr ""
 msgid "Administration tasks are currently disabled."
 msgstr ""
 
+msgid "Authentication"
+msgstr ""
+
 msgid "The project you are trying to access do not exist, do you want to"
 msgstr ""
 
@@ -378,7 +385,7 @@ msgstr ""
 msgid "Project"
 msgstr "திட்டம்"
 
-msgid "Number of members"
+msgid "Number of participants"
 msgstr ""
 
 msgid "Number of bills"
@@ -476,7 +483,7 @@ msgstr ""
 msgid "Add participant"
 msgstr ""
 
-msgid "Edit this member"
+msgid "Edit this participant"
 msgstr ""
 
 msgid "john.doe@example.com, mary.moe@site.com"
@@ -620,7 +627,7 @@ msgstr ""
 
 #, fuzzy, python-format
 msgid "Project renamed to %(new_project_name)s"
-msgstr "திட்ட அடையாளங்காட்டி %(project)s"
+msgstr "திட்ட அடையாளங்காட்டி %(new_project_name)s"
 
 #, python-format
 msgid "Project contact email changed to %(new_email)s"
@@ -774,6 +781,9 @@ msgid "Documentation"
 msgstr ""
 
 msgid "Administation Dashboard"
+msgstr ""
+
+msgid "Legal information"
 msgstr ""
 
 msgid "\"I hate money\" is free software"
@@ -987,3 +997,35 @@ msgstr ""
 #~ "நீங்கள் ஒரு மோசமான டோக்கனை வழங்கியுள்ளீர்கள்"
 #~ " அல்லது திட்ட அடையாளங்காட்டி இல்லை."
 
+#~ msgid "User name incorrect"
+#~ msgstr "பயனர் பெயர் தவறானது"
+
+#~ msgid "People to notify"
+#~ msgstr "அறிவிக்க வேண்டியவர்கள்"
+
+#~ msgid "Error activating member"
+#~ msgstr ""
+
+#~ msgid "Error removing member"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "User '%(name)s' has been deactivated. It"
+#~ " will still appear in the users "
+#~ "list until its balance becomes zero."
+#~ msgstr ""
+
+#~ msgid "User '%(name)s' has been removed"
+#~ msgstr ""
+
+#~ msgid "User '%(name)s' has been edited"
+#~ msgstr ""
+
+#~ msgid "Number of members"
+#~ msgstr ""
+
+#~ msgid "Edit this member"
+#~ msgstr ""
+
+#~ msgid "Participants to notify"
+#~ msgstr ""

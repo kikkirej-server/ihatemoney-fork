@@ -69,6 +69,11 @@ body {
   width: 55px;
 }
 
+#header .side-to-side {
+  /* avoid the man with his hand pointing at nothing */
+  white-space: nowrap;
+}
+
 #header .shareimg {
   width: 80px;
   margin-left: 5px;
@@ -121,14 +126,6 @@ body {
   .identifier {
     margin-bottom: 0;
   }
-}
-
-#add-member-form {
-  padding-top: 1em;
-  padding-bottom: 1em;
-}
-#add-member-form input[type="text"] {
-  width: 60%;
 }
 
 #table_overflow {
@@ -234,7 +231,7 @@ footer p.footer-links a {
 footer .footer-right {
   float: right;
   margin-top: 6px;
-  max-width: 180px;
+  max-width: 225px;
 }
 
 footer .footer-right a {
@@ -290,13 +287,8 @@ footer .footer-left {
   margin-top: 30px;
 }
 
-#previous-page {
+#pagination-top {
   margin-top: 30px;
-}
-
-#next-page {
-  margin-top: 30px;
-  padding-left: 2em;
 }
 
 /* Avoid text color flickering when it loose focus as the modal appears */
@@ -339,6 +331,7 @@ footer .footer-left {
 #history_table {
   margin-top: 30px;
   margin-bottom: 30px;
+  flex-basis: auto;
 }
 
 @media (min-width: 768px) {
@@ -463,12 +456,8 @@ tr.payer_line .balance-name {
   margin-top: 10px;
 }
 
-.messages {
-  display: flex;
-  justify-content: center;
-  position: absolute;
-  top: 4.5rem;
-  width: 100%;
+.flash {
+  z-index: 1031;
 }
 
 .light {

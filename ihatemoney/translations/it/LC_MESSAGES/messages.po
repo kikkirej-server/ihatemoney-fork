@@ -1,19 +1,19 @@
-
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-14 22:10+0200\n"
-"PO-Revision-Date: 2021-03-17 15:18+0000\n"
-"Last-Translator: TomSolGit <Tommaso.solfa@gmail.com>\n"
+"POT-Creation-Date: 2021-11-01 18:01+0100\n"
+"PO-Revision-Date: 2021-11-25 23:51+0000\n"
+"Last-Translator: Paolo Campetto <fbok61hw@anonaddy.me>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/i-hate-money/"
+"i-hate-money/it/>\n"
 "Language: it\n"
-"Language-Team: Italian <https://hosted.weblate.org/projects/i-hate-"
-"money/i-hate-money/it/>\n"
-"Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.10-dev\n"
+"Generated-By: Babel 2.9.0\n"
 
 msgid ""
 "Not a valid amount or expression. Only numbers and + - * / operators are "
@@ -43,6 +43,9 @@ msgstr "Utilizzare la localizzazione IP per lo storico del progetto"
 
 msgid "Default Currency"
 msgstr "Valuta predefinita"
+
+msgid "Setting a default currency enables currency conversion between bills"
+msgstr ""
 
 msgid ""
 "This project cannot be set to 'no currency' because it contains bills in "
@@ -91,7 +94,7 @@ msgstr "Progetto non conosciuto"
 
 #, fuzzy
 msgid "Invalid private code."
-msgstr "Codice privato"
+msgstr "Codice privato non valido."
 
 msgid "Get in"
 msgstr "Entra"
@@ -166,14 +169,17 @@ msgstr "Peso"
 msgid "Add"
 msgstr "Aggiungi"
 
-msgid "User name incorrect"
-msgstr "Nome utente non valido"
+#, fuzzy
+msgid "The participant name is invalid"
+msgstr "L'utente '%(name)s' è stato rimosso"
 
-msgid "This project already have this member"
+#, fuzzy
+msgid "This project already have this participant"
 msgstr "Membro già presente in questo progetto"
 
+#, fuzzy
 msgid "People to notify"
-msgstr "Persone da informare"
+msgstr "Persone da avvisare"
 
 msgid "Send invites"
 msgstr "Invia inviti"
@@ -300,31 +306,31 @@ msgstr ""
 msgid "%(member)s has been added"
 msgstr "%(member)s è stato aggiunto"
 
-msgid "Error activating member"
+msgid "Error activating participant"
 msgstr ""
 
 #, python-format
 msgid "%(name)s is part of this project again"
 msgstr "%(name)s fa nuovamente parte di questo progetto"
 
-msgid "Error removing member"
+msgid "Error removing participant"
 msgstr ""
 
-#, python-format
+#, fuzzy, python-format
 msgid ""
-"User '%(name)s' has been deactivated. It will still appear in the users "
-"list until its balance becomes zero."
+"Participant '%(name)s' has been deactivated. It will still appear in the "
+"list until its balance reach zero."
 msgstr ""
 "L'utente '%(name)s' è stato disattivato. Comparirà ancora nella lista "
 "utenti finché il suo bilancio sarà superiore a zero."
 
-#, python-format
-msgid "User '%(name)s' has been removed"
+#, fuzzy, python-format
+msgid "Participant '%(name)s' has been removed"
 msgstr "L'utente '%(name)s' è stato rimosso"
 
-#, python-format
-msgid "User '%(name)s' has been edited"
-msgstr "L'utente '%(name)s' è stato aggiornato"
+#, fuzzy, python-format
+msgid "Participant '%(name)s' has been modified"
+msgstr "L'utente '%(name)s' è stato rimosso"
 
 msgid "The bill has been added"
 msgstr "L'addebito è stato aggiunto"
@@ -344,7 +350,7 @@ msgstr "Attivare la cronologia del progetto"
 
 #, fuzzy
 msgid "Deleted project history."
-msgstr "Attivare la cronologia del progetto"
+msgstr "Cronologia del progetto cancellata."
 
 #, fuzzy
 msgid "Error deleting recorded IP addresses"
@@ -365,6 +371,10 @@ msgstr "Ritorna all'elenco"
 msgid "Administration tasks are currently disabled."
 msgstr "In questo momento le funzionalità amministrative sono disabilitate."
 
+#, fuzzy
+msgid "Authentication"
+msgstr "Documentazione"
+
 msgid "The project you are trying to access do not exist, do you want to"
 msgstr "Il progetto cui stai provando ad accedere non esiste, vuoi"
 
@@ -380,8 +390,9 @@ msgstr "Crea un nuovo progetto"
 msgid "Project"
 msgstr "Progetto"
 
-msgid "Number of members"
-msgstr "Numero di membri"
+#, fuzzy
+msgid "Number of participants"
+msgstr "aggiunti partecipanti"
 
 msgid "Number of bills"
 msgstr "Numero di spese"
@@ -482,8 +493,9 @@ msgstr ""
 msgid "Add participant"
 msgstr "Aggiungi partecipante"
 
-msgid "Edit this member"
-msgstr "Modifica questo membro"
+#, fuzzy
+msgid "Edit this participant"
+msgstr "Aggiungi partecipante"
 
 msgid "john.doe@example.com, mary.moe@site.com"
 msgstr "mario.rossi@example.com, maria.bianchi@site.com"
@@ -594,18 +606,20 @@ msgstr ""
 "per rimuoverle.</i></p>\n"
 "            "
 
+#, fuzzy
 msgid ""
 "Some entries below contain IP addresses, even though this project has IP "
 "recording disabled. "
 msgstr ""
-"Alcune voci qui sotto contengono un indirizzo IP, nonostante in questo "
-"progetto la registrazione degli IP è disabilitata. "
+"Alcune voci qui sotto contengono indirizzi IP, anche se in questo progetto "
+"la registrazione degli IP è disabilitata. "
 
 msgid "Delete stored IP addresses"
 msgstr "Cancella indirizzi IP conservati"
 
+#, fuzzy
 msgid "No history to erase"
-msgstr "Nessuno storico da cancellare"
+msgstr "Nessuna cronologia da cancellare"
 
 msgid "Clear Project History"
 msgstr "Cancella Cronologia Progetto"
@@ -635,9 +649,9 @@ msgstr ""
 msgid "From IP"
 msgstr "Dall'IP"
 
-#, fuzzy, python-format
+#, python-format
 msgid "Project %(name)s added"
-msgstr "Nome del progetto"
+msgstr "Progetto %(name)s aggiunto"
 
 #, fuzzy, python-format
 msgid "Bill %(name)s added"
@@ -652,7 +666,7 @@ msgstr "Codice privato del progetto modificato"
 
 #, fuzzy, python-format
 msgid "Project renamed to %(new_project_name)s"
-msgstr "L'identificatore del progetto è %(project)s"
+msgstr "L'identificatore del progetto è %(new_project_name)s"
 
 #, fuzzy, python-format
 msgid "Project contact email changed to %(new_email)s"
@@ -809,6 +823,10 @@ msgstr "Documentazione"
 
 msgid "Administation Dashboard"
 msgstr "Cruscotto Amministrazione"
+
+#, fuzzy
+msgid "Legal information"
+msgstr "Cancella Conferma"
 
 msgid "\"I hate money\" is free software"
 msgstr "\"I hate money\" è un software libero"
@@ -1043,3 +1061,8 @@ msgstr "Periodo"
 #~ "l'identificatore del progetto non è "
 #~ "valido."
 
+#~ msgid "User name incorrect"
+#~ msgstr "Nome utente non valido"
+
+#~ msgid "People to notify"
+#~ msgstr "Persone da informare"

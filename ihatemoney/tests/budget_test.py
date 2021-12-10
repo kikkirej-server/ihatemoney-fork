@@ -42,14 +42,14 @@ class BudgetTestCase(IhatemoneyTestCase):
             self.assertEqual(outbox[0].recipients, ["raclette@notmyidea.org"])
             self.assertEqual(outbox[1].recipients, ["zorglub@notmyidea.org"])
 
-        # sending a message to multiple persons
+        # sending a message to multiple participants
         with self.app.mail.record_messages() as outbox:
             self.client.post(
                 "/raclette/invite",
                 data={"emails": "zorglub@notmyidea.org, toto@notmyidea.org"},
             )
 
-            # only one message is sent to multiple persons
+            # only one message is sent to multiple participants
             self.assertEqual(len(outbox), 1)
             self.assertEqual(
                 outbox[0].recipients, ["zorglub@notmyidea.org", "toto@notmyidea.org"]
@@ -67,7 +67,7 @@ class BudgetTestCase(IhatemoneyTestCase):
                 "/raclette/invite", data={"emails": "zorglub@notmyidea.org, zorglub"}
             )  # not valid
 
-            # only one message is sent to multiple persons
+            # only one message is sent to multiple participants
             self.assertEqual(len(outbox), 0)
 
     def test_invite(self):
@@ -206,7 +206,8 @@ class BudgetTestCase(IhatemoneyTestCase):
                     },
                     follow_redirects=True,
                 )
-                # an email is sent to the owner with a reminder of the password
+
+                # An email is sent to the owner with a reminder of the password.
                 self.assertEqual(len(outbox), 1)
                 self.assertEqual(outbox[0].recipients, ["raclette@notmyidea.org"])
                 self.assertIn(
@@ -318,7 +319,7 @@ class BudgetTestCase(IhatemoneyTestCase):
 
         result = self.client.get("/raclette/")
 
-        # Empty bill list and no members, should now propose to add members first
+        # Empty bill list and no participant, should now propose to add participants first
         self.assertIn(
             'You probably want to <a href="/raclette/members/add"',
             result.data.decode("utf-8"),
@@ -511,6 +512,19 @@ class BudgetTestCase(IhatemoneyTestCase):
             self.assertNotIn("Authentication", resp.data.decode("utf-8"))
             self.assertTrue(session["is_admin"])
 
+    def test_authentication_with_upper_case(self):
+        self.post_project("Raclette")
+
+        # try to connect with the right credentials should work
+        with self.app.test_client() as c:
+            resp = c.post(
+                "/authenticate", data={"id": "Raclette", "password": "Raclette"}
+            )
+
+            self.assertNotIn("Authentication", resp.data.decode("utf-8"))
+            self.assertIn("raclette", session)
+            self.assertTrue(session["raclette"])
+
     def test_admin_authentication(self):
         self.app.config["ADMIN_PASSWORD"] = generate_password_hash("pass")
         # Disable public project creation so we have an admin endpoint to test
@@ -568,7 +582,7 @@ class BudgetTestCase(IhatemoneyTestCase):
     def test_manage_bills(self):
         self.post_project("raclette")
 
-        # add two persons
+        # add two participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post("/raclette/members/add", data={"name": "fred"})
 
@@ -709,7 +723,7 @@ class BudgetTestCase(IhatemoneyTestCase):
     def test_weighted_balance(self):
         self.post_project("raclette")
 
-        # add two persons
+        # add two participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post(
             "/raclette/members/add", data={"name": "freddy familly", "weight": 4}
@@ -756,7 +770,7 @@ class BudgetTestCase(IhatemoneyTestCase):
     def test_weighted_members_list(self):
         self.post_project("raclette")
 
-        # add two persons
+        # add two participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post("/raclette/members/add", data={"name": "tata", "weight": 1})
 
@@ -787,7 +801,7 @@ class BudgetTestCase(IhatemoneyTestCase):
     def test_rounding(self):
         self.post_project("raclette")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post("/raclette/members/add", data={"name": "fred"})
         self.client.post("/raclette/members/add", data={"name": "tata"})
@@ -883,7 +897,7 @@ class BudgetTestCase(IhatemoneyTestCase):
             follow_redirects=True,
         )
         self.assertIn(
-            "<thead><tr><th>Project</th><th>Number of members",
+            "<thead><tr><th>Project</th><th>Number of participants",
             resp.data.decode("utf-8"),
         )
 
@@ -896,11 +910,11 @@ class BudgetTestCase(IhatemoneyTestCase):
         # Output is checked with the USD sign
         self.post_project("raclette", default_currency="USD")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub", "weight": 2})
         self.client.post("/raclette/members/add", data={"name": "fred"})
         self.client.post("/raclette/members/add", data={"name": "tata"})
-        # Add a member with a balance=0 :
+        # Add a participant with a balance at 0 :
         self.client.post("/raclette/members/add", data={"name": "pépé"})
 
         # create bills
@@ -976,11 +990,11 @@ class BudgetTestCase(IhatemoneyTestCase):
     def test_settle(self):
         self.post_project("raclette")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post("/raclette/members/add", data={"name": "fred"})
         self.client.post("/raclette/members/add", data={"name": "tata"})
-        # Add a member with a balance=0 :
+        # Add a participant with a balance at 0 :
         self.client.post("/raclette/members/add", data={"name": "pépé"})
 
         # create bills
@@ -1031,7 +1045,7 @@ class BudgetTestCase(IhatemoneyTestCase):
     def test_settle_zero(self):
         self.post_project("raclette")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post("/raclette/members/add", data={"name": "fred"})
         self.client.post("/raclette/members/add", data={"name": "tata"})
@@ -1086,7 +1100,7 @@ class BudgetTestCase(IhatemoneyTestCase):
 
         self.post_project("raclette")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub", "weight": 2})
         self.client.post("/raclette/members/add", data={"name": "fred"})
         self.client.post("/raclette/members/add", data={"name": "tata"})
@@ -1217,7 +1231,7 @@ class BudgetTestCase(IhatemoneyTestCase):
     def test_export_with_currencies(self):
         self.post_project("raclette", default_currency="EUR")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub", "weight": 2})
         self.client.post("/raclette/members/add", data={"name": "fred"})
         self.client.post("/raclette/members/add", data={"name": "tata"})
@@ -1844,11 +1858,11 @@ class BudgetTestCase(IhatemoneyTestCase):
                 import_project(file, project)
 
     def test_access_other_projects(self):
-        """Test that accessing or editing bills and members from another project fails"""
+        """Test that accessing or editing bills and participants from another project fails"""
         # Create project
         self.post_project("raclette")
 
-        # Add members
+        # Add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub", "weight": 2})
         self.client.post("/raclette/members/add", data={"name": "fred"})
         self.client.post("/raclette/members/add", data={"name": "tata"})
@@ -1972,7 +1986,7 @@ class BudgetTestCase(IhatemoneyTestCase):
         # A project should be editable
         self.post_project("raclette")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post("/raclette/members/add", data={"name": "fred"})
         self.client.post("/raclette/members/add", data={"name": "tata"})
@@ -2099,7 +2113,7 @@ class BudgetTestCase(IhatemoneyTestCase):
         # Default currency is 'XXX', but we should start from a project with a currency
         self.post_project("raclette", default_currency="USD")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post("/raclette/members/add", data={"name": "fred"})
 
@@ -2133,7 +2147,7 @@ class BudgetTestCase(IhatemoneyTestCase):
         # Default currency is 'XXX', but we should start from a project with a currency
         self.post_project("raclette", default_currency="USD")
 
-        # add members
+        # add participants
         self.client.post("/raclette/members/add", data={"name": "zorglub"})
         self.client.post("/raclette/members/add", data={"name": "fred"})
 

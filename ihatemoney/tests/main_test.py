@@ -26,7 +26,7 @@ class ConfigurationTestCase(BaseTestCase):
         self.assertFalse(self.app.config["SQLALCHEMY_TRACK_MODIFICATIONS"])
         self.assertEqual(
             self.app.config["MAIL_DEFAULT_SENDER"],
-            ("Budget manager", "budget@notmyidea.org"),
+            ("Budget manager <admin@example.com>"),
         )
         self.assertTrue(self.app.config["ACTIVATE_DEMO_PROJECT"])
         self.assertTrue(self.app.config["ALLOW_PUBLIC_PROJECT_CREATION"])
@@ -99,7 +99,7 @@ class CommandTestCase(BaseTestCase):
 
     def test_demo_project_deletion(self):
         self.create_project("demo")
-        self.assertEqual(models.Project.query.get("demo").name, "demo")
+        self.assertEqual(self.get_project("demo").name, "demo")
 
         runner = self.app.test_cli_runner()
         runner.invoke(delete_project, "demo")
@@ -108,6 +108,62 @@ class CommandTestCase(BaseTestCase):
 
 
 class ModelsTestCase(IhatemoneyTestCase):
+    def test_weighted_bills(self):
+        """Test the SQL request that fetch all bills and weights"""
+        self.post_project("raclette")
+
+        # add members
+        self.client.post("/raclette/members/add", data={"name": "zorglub", "weight": 2})
+        self.client.post("/raclette/members/add", data={"name": "fred"})
+        self.client.post("/raclette/members/add", data={"name": "tata"})
+        # Add a member with a balance=0 :
+        self.client.post("/raclette/members/add", data={"name": "pépé"})
+
+        # create bills
+        self.client.post(
+            "/raclette/add",
+            data={
+                "date": "2011-08-10",
+                "what": "fromage à raclette",
+                "payer": 1,
+                "payed_for": [1, 2, 3],
+                "amount": "10.0",
+            },
+        )
+
+        self.client.post(
+            "/raclette/add",
+            data={
+                "date": "2011-08-10",
+                "what": "red wine",
+                "payer": 2,
+                "payed_for": [1],
+                "amount": "20",
+            },
+        )
+
+        self.client.post(
+            "/raclette/add",
+            data={
+                "date": "2011-08-10",
+                "what": "delicatessen",
+                "payer": 1,
+                "payed_for": [1, 2],
+                "amount": "10",
+            },
+        )
+        project = models.Project.query.get_by_name(name="raclette")
+        for (weight, bill) in project.get_bill_weights().all():
+            if bill.what == "red wine":
+                pay_each_expected = 20 / 2
+                self.assertEqual(bill.amount / weight, pay_each_expected)
+            if bill.what == "fromage à raclette":
+                pay_each_expected = 10 / 4
+                self.assertEqual(bill.amount / weight, pay_each_expected)
+            if bill.what == "delicatessen":
+                pay_each_expected = 10 / 3
+                self.assertEqual(bill.amount / weight, pay_each_expected)
+
     def test_bill_pay_each(self):
 
         self.post_project("raclette")
@@ -246,7 +302,7 @@ class CaptchaTestCase(IhatemoneyTestCase):
     ENABLE_CAPTCHA = True
 
     def test_project_creation_with_captcha(self):
-        with self.app.test_client() as c:
+        with self.client as c:
             c.post(
                 "/create",
                 data={

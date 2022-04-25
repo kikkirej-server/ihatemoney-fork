@@ -576,6 +576,11 @@ class APITestCase(IhatemoneyTestCase):
             self.assertStatus(400, req)
 
     def test_currencies(self):
+        # check /currencies for list of supported currencies
+        resp = self.client.get("/api/currencies")
+        self.assertTrue(201, resp.status_code)
+        self.assertIn("XXX", json.loads(resp.data.decode("utf-8")))
+
         # create project with a default currency
         resp = self.api_create("raclette", default_currency="EUR")
         self.assertTrue(201, resp.status_code)
@@ -905,6 +910,25 @@ class APITestCase(IhatemoneyTestCase):
         self.assertEqual(resp.data.decode("utf-8").count("<td> -- </td>"), 2)
         self.assertNotIn("127.0.0.1", resp.data.decode("utf-8"))
 
+    def test_amount_is_null(self):
+        self.api_create("raclette")
+        # add participants
+        self.api_add_member("raclette", "zorglub")
+
+        # add a bill null amount
+        req = self.client.post(
+            "/api/projects/raclette/bills",
+            data={
+                "date": "2011-08-10",
+                "what": "fromage",
+                "payer": "1",
+                "payed_for": ["1"],
+                "amount": "0",
+            },
+            headers=self.get_auth("raclette"),
+        )
+        self.assertStatus(400, req)
+
     def test_project_creation_with_mixed_case(self):
         self.api_create("Raclette")
         # get information about it
@@ -912,6 +936,26 @@ class APITestCase(IhatemoneyTestCase):
             "/api/projects/Raclette", headers=self.get_auth("Raclette")
         )
         self.assertStatus(200, resp)
+
+    def test_amount_too_high(self):
+        self.api_create("raclette")
+        # add participants
+        self.api_add_member("raclette", "zorglub")
+
+        # add a bill with too high amount
+        # See https://github.com/python-babel/babel/issues/821
+        req = self.client.post(
+            "/api/projects/raclette/bills",
+            data={
+                "date": "2011-08-10",
+                "what": "fromage",
+                "payer": "1",
+                "payed_for": ["1"],
+                "amount": "9347242149381274732472348728748723473278472843.12",
+            },
+            headers=self.get_auth("raclette"),
+        )
+        self.assertStatus(400, req)
 
 
 if __name__ == "__main__":

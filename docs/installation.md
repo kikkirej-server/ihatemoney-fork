@@ -2,11 +2,12 @@
 
 There are multiple ways to install «Ihatemoney» on your system :
 
-1.  {ref}`docker`.
+1.  {ref}`docker`
 2.  [Via Yunohost](https://github.com/YunoHost-Apps/ihatemoney_ynh) (a
     server operating system aiming to make self-hosting accessible to
     anyone)
-3.  {ref}`manual-installation`
+3.  {ref}`cloud`
+4.  {ref}`manual-installation`
 
 
 :::{note}
@@ -43,6 +44,8 @@ mail server and an external database:
     -e MAIL_USE_SSL=True \
     ihatemoney/ihatemoney
 
+If you are running this locally, you might need to disable the secure session cookies, as they do not work locally. You need to pass `-e SESSION_COOKIE_SECURE=False` to docker run.
+
 A volume can also be specified to persist the default database file:
 
     docker run -d -p 8000:8000 -v /host/path/to/database:/database ihatemoney/ihatemoney
@@ -65,6 +68,13 @@ workers:
 
     docker run -d -p 8000:8000 ihatemoney/ihatemoney -w 3
 
+(cloud)=
+## On a Cloud Provider
+
+Some Paas (Platform-as-a-Service), provide a documentation or even a quick installation process to deploy and enjoy your instance within a minute:
+
+  * [alwaysdata](https://www.alwaysdata.com/en/marketplace/ihatemoney/)
+
 (manual-installation)=
 ## Via a manual installation
 
@@ -73,9 +83,9 @@ workers:
 
 «Ihatemoney» depends on:
 
--   **Python**: version 3.6 to 3.9 included will work.
--   **A Backend**: to choose among SQLite, PostgreSQL, MariaDB (>=
-    10.3.2) or Memory.
+-   **Python**: any version from 3.6 to 3.10 will work.
+-   **A database backend**: choose among SQLite, PostgreSQL, MariaDB (>=
+    10.3.2).
 -   **Virtual environment** (recommended): [python3-venv]{.title-ref}
     package under Debian/Ubuntu.
 

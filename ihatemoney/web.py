@@ -8,13 +8,10 @@ Basically, this blueprint takes care of the authentication and provides
 some shortcuts to make your life better when coding (see `pull_project`
 and `add_project_id` for a quick overview)
 """
-from datetime import datetime
 from functools import wraps
 import json
 import os
 
-from dateutil.parser import parse
-from dateutil.relativedelta import relativedelta
 from flask import (
     Blueprint,
     abort,
@@ -31,7 +28,6 @@ from flask import (
 )
 from flask_babel import gettext as _
 from flask_mail import Message
-from sqlalchemy import orm
 from sqlalchemy_continuum import Operation
 from werkzeug.exceptions import NotFound
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -44,26 +40,26 @@ from ihatemoney.forms import (
     DestructiveActionProjectForm,
     EditProjectForm,
     EmptyForm,
+    ImportProjectForm,
     InviteForm,
     MemberForm,
     PasswordReminder,
     ProjectForm,
     ProjectFormWithCaptcha,
     ResetPasswordForm,
-    UploadForm,
     get_billform_for,
 )
-from ihatemoney.history import get_history, get_history_queries
+from ihatemoney.history import get_history, get_history_queries, purge_history
 from ihatemoney.models import Bill, LoggingMode, Person, Project, db
 from ihatemoney.utils import (
     LoginThrottler,
     Redirect303,
+    csv2list_of_dicts,
+    flash_email_error,
     format_form_errors,
-    get_members,
     list_of_dicts2csv,
     list_of_dicts2json,
     render_localized_template,
-    same_bill,
     send_email,
 )
 
@@ -334,11 +330,9 @@ def create_project():
             else:
                 # Display the error as a simple "info" alert, because it's
                 # not critical and doesn't prevent using the project.
-                flash(
-                    _(
-                        "We tried to send you an reminder email, but there was an error. "
-                        "You can still use the project normally."
-                    ),
+                flash_email_error(
+                    "We tried to send you an reminder email, but there was an error. "
+                    "You can still use the project normally.",
                     category="info",
                 )
             return redirect(url_for(".list_bills", project_id=project.id))
@@ -363,14 +357,9 @@ def remind_password():
             if success:
                 return redirect(url_for(".password_reminder_sent"))
             else:
-                flash(
-                    _(
-                        "Sorry, there was an error while sending you an email "
-                        "with password reset instructions. "
-                        "Please check the email configuration of the server "
-                        "or contact the administrator."
-                    ),
-                    category="danger",
+                flash_email_error(
+                    "Sorry, there was an error while sending you an email with "
+                    "password reset instructions."
                 )
                 # Fall-through: we stay on the same page and display the form again
     return render_template("password_reminder.html", form=form)
@@ -412,17 +401,8 @@ def reset_password():
 @main.route("/<project_id>/edit", methods=["GET", "POST"])
 def edit_project():
     edit_form = EditProjectForm(id=g.project.id)
+    import_form = ImportProjectForm(id=g.project.id)
     delete_form = DestructiveActionProjectForm(id=g.project.id)
-    import_form = UploadForm()
-    # Import form
-    if import_form.validate_on_submit():
-        try:
-            import_project(import_form.file.data.stream, g.project)
-            flash(_("Project successfully uploaded"))
-
-            return redirect(url_for("main.list_bills"))
-        except ValueError as e:
-            flash(e.args[0], category="danger")
 
     # Edit form
     if edit_form.validate_on_submit():
@@ -446,103 +426,71 @@ def edit_project():
     return render_template(
         "edit_project.html",
         edit_form=edit_form,
-        delete_form=delete_form,
         import_form=import_form,
+        delete_form=delete_form,
         current_view="edit_project",
     )
 
 
-def import_project(file, project):
-    json_file = json.load(file)
+@main.route("/<project_id>/import", methods=["POST"])
+def import_project():
+    form = ImportProjectForm()
+    if form.validate():
+        try:
+            data = form.file.data
+            if data.mimetype == "application/json":
+                bills = json.load(data.stream)
+            elif data.mimetype == "text/csv":
+                try:
+                    bills = csv2list_of_dicts(data)
+                except Exception:
+                    raise ValueError(_("Unable to parse CSV"))
+            else:
+                raise ValueError("Unsupported file type")
 
-    # Check if JSON is correct
-    attr = ["what", "payer_name", "payer_weight", "amount", "currency", "date", "owers"]
-    attr.sort()
-    currencies = set()
-    for e in json_file:
-        # If currency is absent, empty, or explicitly set to XXX
-        # set it to project default.
-        if e.get("currency", "") in ["", "XXX"]:
-            e["currency"] = project.default_currency
-        if len(e) != len(attr):
-            raise ValueError(_("Invalid JSON"))
-        list_attr = []
-        for i in e:
-            list_attr.append(i)
-        list_attr.sort()
-        if list_attr != attr:
-            raise ValueError(_("Invalid JSON"))
-        # Keep track of currencies
-        currencies.add(e["currency"])
+            # Check data
+            attr = [
+                "amount",
+                "currency",
+                "date",
+                "owers",
+                "payer_name",
+                "payer_weight",
+                "what",
+            ]
+            currencies = set()
+            for b in bills:
+                if b.get("currency", "") in ["", "XXX"]:
+                    b["currency"] = g.project.default_currency
+                for a in attr:
+                    if a not in b:
+                        raise ValueError(_("Missing attribute {}").format(a))
+                currencies.add(b["currency"])
 
-    # Additional checks if project has no default currency
-    if project.default_currency == CurrencyConverter.no_currency:
-        # If bills have currencies, they must be consistent
-        if len(currencies - {CurrencyConverter.no_currency}) >= 2:
-            raise ValueError(
-                _(
-                    "Cannot add bills in multiple currencies to a project without default currency"
-                )
-            )
-        # Strip currency from bills (since it's the same for every bill)
-        for e in json_file:
-            e["currency"] = CurrencyConverter.no_currency
+            # Additional checks if project has no default currency
+            if g.project.default_currency == CurrencyConverter.no_currency:
+                # If bills have currencies, they must be consistent
+                if len(currencies - {CurrencyConverter.no_currency}) >= 2:
+                    raise ValueError(
+                        _(
+                            "Cannot add bills in multiple currencies to a project without default "
+                            "currency"
+                        )
+                    )
+                # Strip currency from bills (since it's the same for every bill)
+                for b in bills:
+                    b["currency"] = CurrencyConverter.no_currency
 
-    # From json : export list of members
-    members_json = get_members(json_file)
-    members = project.members
-    members_already_here = list()
-    for m in members:
-        members_already_here.append(str(m))
+            g.project.import_bills(bills)
 
-    # List all members not in the project and weight associated
-    # List of tuples (name,weight)
-    members_to_add = list()
-    for i in members_json:
-        if str(i[0]) not in members_already_here:
-            members_to_add.append(i)
-
-    # List bills not in the project
-    # Same format than JSON element
-    project_bills = project.get_pretty_bills()
-    bill_to_add = list()
-    for j in json_file:
-        same = False
-        for p in project_bills:
-            if same_bill(p, j):
-                same = True
-                break
-        if not same:
-            bill_to_add.append(j)
-
-    # Add users to DB
-    for m in members_to_add:
-        Person(name=m[0], project=project, weight=m[1])
-    db.session.commit()
-
-    id_dict = {}
-    for i in project.members:
-        id_dict[i.name] = i.id
-
-    # Create bills
-    for b in bill_to_add:
-        owers_id = list()
-        for ower in b["owers"]:
-            owers_id.append(id_dict[ower])
-
-        bill = Bill()
-        form = get_billform_for(project)
-        form.what = b["what"]
-        form.amount = b["amount"]
-        form.original_currency = b["currency"]
-        form.date = parse(b["date"])
-        form.payer = id_dict[b["payer_name"]]
-        form.payed_for = owers_id
-
-        db.session.add(form.fake_form(bill, project))
-
-    # Add bills to DB
-    db.session.commit()
+            flash(_("Project successfully uploaded"))
+            return redirect(url_for("main.list_bills"))
+        except ValueError as b:
+            flash(b.args[0], category="danger")
+    else:
+        for component, errors in form.errors.items():
+            flash(_(component + ": ") + ", ".join(errors), category="danger")
+    return redirect(request.headers.get("Referer") or url_for(".edit_project"))
 
 
 @main.route("/<project_id>/delete", methods=["POST"])
@@ -634,13 +582,8 @@ def invite():
                 flash(_("Your invitations have been sent"), category="success")
                 return redirect(url_for(".list_bills"))
             else:
-                flash(
-                    _(
-                        "Sorry, there was an error while trying to send the invitation emails. "
-                        "Please check the email configuration of the server "
-                        "or contact the administrator."
-                    ),
-                    category="danger",
+                flash_email_error(
+                    "Sorry, there was an error while trying to send the invitation emails."
                 )
                 # Fall-through: we stay on the same page and display the form again
     return render_template("send_invites.html", form=form)
@@ -654,16 +597,17 @@ def list_bills():
     # set the last selected payer as default choice if exists
     if "last_selected_payer" in session:
         bill_form.payer.data = session["last_selected_payer"]
-    # Preload the "owers" relationship for all bills
-    bills = (
-        g.project.get_bills()
-        .options(orm.subqueryload(Bill.owers))
-        .paginate(per_page=100, error_out=True)
+
+    # Each item will be a (weight_sum, Bill) tuple.
+    # TODO: improve this awkward result using column_property:
+    # https://docs.sqlalchemy.org/en/14/orm/mapped_sql_expr.html.
+    weighted_bills = g.project.get_bill_weights_ordered().paginate(
+        per_page=100, error_out=True
     )
 
     return render_template(
         "list_bills.html",
-        bills=bills,
+        bills=weighted_bills,
         member_form=MemberForm(g.project),
         bill_form=bill_form,
         csrf_form=csrf_form,
@@ -760,8 +704,7 @@ def add_bill():
             session["last_selected_payer"] = form.payer.data
             session.update()
 
-            bill = Bill()
-            db.session.add(form.save(bill, g.project))
+            db.session.add(form.export(g.project))
             db.session.commit()
 
             flash(_("The bill has been added"))
@@ -818,8 +761,11 @@ def edit_bill(bill_id):
 
 @main.route("/lang/<lang>")
 def change_lang(lang):
-    session["lang"] = lang
-    session.update()
+    if lang in current_app.config["SUPPORTED_LANGUAGES"]:
+        session["lang"] = lang
+        session.update()
+    else:
+        flash(_(f"{lang} is not a supported language"), category="warning")
 
     return redirect(request.headers.get("Referer") or url_for(".home"))
 
@@ -862,8 +808,7 @@ def erase_history():
         )
         return redirect(url_for(".history"))
 
-    for query in get_history_queries(g.project):
-        query.delete(synchronize_session="fetch")
+    purge_history(g.project)
 
     db.session.commit()
     flash(_("Deleted project history."))
@@ -893,12 +838,13 @@ def strip_ip_addresses():
 @main.route("/<project_id>/statistics")
 def statistics():
     """Compute what each participant has paid and spent and display it"""
-    today = datetime.now()
+    # Determine range of months between which there are bills
+    months = g.project.active_months_range()
     return render_template(
         "statistics.html",
         members_stats=g.project.members_stats,
         monthly_stats=g.project.monthly_stats,
-        months=[today - relativedelta(months=i) for i in range(12)],
+        months=months,
         current_view="statistics",
     )
 

@@ -118,13 +118,27 @@
 
 {% endmacro %}
 
-{% macro upload_json(form) %}
+{% macro import_project(form) %}
+
     {% include "display_errors.html" %}
     {{ form.hidden_tag() }}
-    {{ form.file }}
-    <div class="actions">
-        <button class="btn btn-primary">{{ _("Import") }}</button>
+
+    <p><strong>{{ _("Import previously exported project") }}</strong></p>
+
+    <div class="custom-file">
+        <div class="form-group">
+            {{ form.file(class="custom-file-input", accept=".json,.csv") }}
+            <small class="form-text text-muted">
+                {{ form.file.description }}
+            </small>
+        </div>
+        <label class="custom-file-label" for="customFile">{{ _('Choose file') }}</label>
     </div>
+
+    <div class="actions">
+        <button class="btn btn-primary">{{ _("Import project") }}</button>
+    </div>
+
 {% endmacro %}
 
 {% macro delete_project_history(form) %}
@@ -152,7 +166,9 @@
     {{ input(form.date, inline=True) }}
     {{ input(form.what, inline=True) }}
     {{ input(form.payer, inline=True, class="form-control custom-select") }}
-    {{ input(form.amount, inline=True) }}
+    <div data-toggle="tooltip" data-placement="top" title='{{ _("Simple operations are allowed, e.g. (18+36.2)/3") }}'>
+        {{ input(form.amount, inline=True) }}
+    </div>
 
     <div class="form-group row">
         <label class="col-3" for="payed_for">{{ _("For whom?") }}</label>

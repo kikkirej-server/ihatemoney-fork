@@ -1,6 +1,5 @@
 import ast
 import csv
-from datetime import datetime, timedelta
 import email.utils
 from enum import Enum
 from io import BytesIO, StringIO, TextIOWrapper
@@ -15,10 +14,19 @@ from babel import Locale
 from babel.numbers import get_currency_name, get_currency_symbol
 from flask import current_app, flash, redirect, render_template
 from flask_babel import get_locale, lazy_gettext as _
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import jinja2
 from markupsafe import Markup, escape
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
+from werkzeug.security import generate_password_hash as werkzeug_generate_password_hash
+
+limiter = limiter = Limiter(
+    current_app,
+    key_func=get_remote_address,
+    storage_uri="memory://",
+)
 
 
 def slugify(value):
@@ -57,22 +65,25 @@ def flash_email_error(error_message, category="danger"):
     (admin_name, admin_email) = email.utils.parseaddr(
         current_app.config.get("MAIL_DEFAULT_SENDER")
     )
-    error_extension = "."
+    error_extension = _("Please check the email configuration of the server.")
     if admin_email != "admin@example.com" and current_app.config.get(
         "SHOW_ADMIN_EMAIL"
     ):
-        error_extension = f" or contact the administrator at {admin_email}."
+        error_extension = _(
+            "Please check the email configuration of the server "
+            "or contact the administrator: %(admin_email)s",
+            admin_email=admin_email,
+        )
 
     flash(
-        _(
-            f"{error_message} Please check the email configuration of the server{error_extension}"
+        "{error_message} {error_extension}".format(
+            error_message=error_message, error_extension=error_extension
         ),
         category=category,
     )
 
 
 class Redirect303(HTTPException, RoutingException):
-
     """Raise if the map requests a redirect. This is for example the case if
     `strict_slashes` are activated and an url that requires a trailing slash.
 
@@ -90,7 +101,6 @@ class Redirect303(HTTPException, RoutingException):
 
 
 class PrefixedWSGI(object):
-
     """
     Wrap the application in this middleware and configure the
     front-end server to add these headers, to let you quietly bind
@@ -152,6 +162,17 @@ def list_of_dicts2json(dict_to_convert):
     return BytesIO(dumps(dict_to_convert).encode("utf-8"))
 
 
+def escape_csv_formulae(value):
+    # See https://owasp.org/www-community/attacks/CSV_Injection
+    if (
+        value
+        and isinstance(value, str)
+        and value[0] in ["=", "+", "-", "@", "\t", "\n"]
+    ):
+        return f"'{value}"
+    return value
+
+
 def list_of_dicts2csv(dict_to_convert):
     """Take a list of dictionnaries and turns it into
     a csv in-memory file, assume all dict have the same keys
@@ -164,7 +185,10 @@ def list_of_dicts2csv(dict_to_convert):
         # (expecting a sequence getting a view)
         csv_data = [list(dict_to_convert[0].keys())]
         for dic in dict_to_convert:
-            csv_data.append([dic[h] for h in dict_to_convert[0].keys()])
+            csv_data.append(
+                [escape_csv_formulae(dic[h]) for h in dict_to_convert[0].keys()]
+            )
+            # csv_data.append([dic[h] for h in dict_to_convert[0].keys()])
     except (KeyError, IndexError):
         csv_data = []
     writer = csv.writer(csv_file)
@@ -195,47 +219,9 @@ def csv2list_of_dicts(csv_to_convert):
         r["amount"] = float(r["amount"])
         r["payer_weight"] = float(r["payer_weight"])
         r["owers"] = [o.strip() for o in r["owers"].split(",")]
+        r["bill_type"] = str(r["bill_type"])
         result.append(r)
     return result
-
-
-class LoginThrottler:
-    """Simple login throttler used to limit authentication attempts based on client's ip address.
-    When using multiple workers, remaining number of attempts can get inconsistent
-    but will still be limited to num_workers * max_attempts.
-    """
-
-    def __init__(self, max_attempts=3, delay=1):
-        self._max_attempts = max_attempts
-        # Delay in minutes before resetting the attempts counter
-        self._delay = delay
-        self._attempts = {}
-
-    def get_remaining_attempts(self, ip):
-        return self._max_attempts - self._attempts.get(ip, [datetime.now(), 0])[1]
-
-    def increment_attempts_counter(self, ip):
-        # Reset all attempt counters when they get hungry for memory
-        if len(self._attempts) > 10000:
-            self.__init__()
-        if self._attempts.get(ip) is None:
-            # Store first attempt date and number of attempts since
-            self._attempts[ip] = [datetime.now(), 0]
-        self._attempts.get(ip)[1] += 1
-
-    def is_login_allowed(self, ip):
-        if self._attempts.get(ip) is None:
-            return True
-        # When the delay is expired, reset the counter
-        if datetime.now() - self._attempts.get(ip)[0] > timedelta(minutes=self._delay):
-            self.reset(ip)
-            return True
-        if self._attempts.get(ip)[1] >= self._max_attempts:
-            return False
-        return True
-
-    def reset(self, ip):
-        self._attempts.pop(ip, None)
 
 
 def create_jinja_env(folder, strict_rendering=False):
@@ -317,7 +303,16 @@ def get_members(file):
 
 
 def same_bill(bill1, bill2):
-    attr = ["what", "payer_name", "payer_weight", "amount", "currency", "date", "owers"]
+    attr = [
+        "what",
+        "bill_type",
+        "payer_name",
+        "payer_weight",
+        "amount",
+        "currency",
+        "date",
+        "owers",
+    ]
     for a in attr:
         if bill1[a] != bill2[a]:
             return False
@@ -457,8 +452,22 @@ def format_form_errors(form, prefix):
         )
     else:
         error_list = "</li><li>".join(
-            str(error) for (field, errors) in form.errors.items() for error in errors
+            f"<strong>{field}</strong> {error}"
+            for (field, errors) in form.errors.items()
+            for error in errors
         )
         errors = f"<ul><li>{error_list}</li></ul>"
         # I18N: Form error with a list of errors
         return Markup(_("{prefix}:<br />{errors}").format(prefix=prefix, errors=errors))
+
+
+def generate_password_hash(*args, **kwargs):
+    if current_app.config.get("PASSWORD_HASH_METHOD"):
+        kwargs.setdefault("method", current_app.config["PASSWORD_HASH_METHOD"])
+
+    if current_app.config.get("PASSWORD_HASH_SALT_LENGTH"):
+        kwargs.setdefault(
+            "salt_length", current_app.config["PASSWORD_HASH_SALT_LENGTH"]
+        )
+
+    return werkzeug_generate_password_hash(*args, **kwargs)

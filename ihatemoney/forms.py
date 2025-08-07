@@ -9,11 +9,13 @@ from flask_babel import lazy_gettext as _
 from flask_wtf.file import FileAllowed, FileField, FileRequired
 from flask_wtf.form import FlaskForm
 from markupsafe import Markup
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 from wtforms.fields import (
     BooleanField,
     DateField,
     DecimalField,
+    HiddenField,
+    IntegerField,
     Label,
     PasswordField,
     SelectField,
@@ -39,9 +41,11 @@ from wtforms.validators import (
 )
 
 from ihatemoney.currency_convertor import CurrencyConverter
-from ihatemoney.models import Bill, LoggingMode, Person, Project
+from ihatemoney.models import Bill, BillType, LoggingMode, Person, Project
 from ihatemoney.utils import (
+    em_surround,
     eval_arithmetic_expression,
+    generate_password_hash,
     render_localized_currency,
     slugify,
 )
@@ -65,6 +69,9 @@ def get_billform_for(project, set_default=True, **kwargs):
     if form.original_currency.data is None:
         form.original_currency.data = project.default_currency
 
+    # Used in validate_original_currency
+    form.project_currency = project.default_currency
+
     show_no_currency = form.original_currency.data == CurrencyConverter.no_currency
 
     form.original_currency.choices = [
@@ -85,7 +92,6 @@ def get_billform_for(project, set_default=True, **kwargs):
 
 
 class CommaDecimalField(DecimalField):
-
     """A class to deal with comma in Decimal Field"""
 
     def process_formdata(self, value):
@@ -120,6 +126,11 @@ class CalculatorStringField(StringField):
 
 class EditProjectForm(FlaskForm):
     name = StringField(_("Project name"), validators=[DataRequired()])
+    current_password = PasswordField(
+        _("Current private code"),
+        description=_("Enter existing private code to edit project"),
+        validators=[DataRequired()],
+    )
     # If empty -> don't change the password
     password = PasswordField(
         _("New private code"),
@@ -153,6 +164,13 @@ class EditProjectForm(FlaskForm):
             for currency_name in self.currency_helper.get_currencies()
         ]
 
+    def validate_current_password(self, field):
+        project = Project.query.get(self.id.data)
+        if project is None:
+            raise ValidationError(_("Unknown error"))
+        if not check_password_hash(project.password, self.current_password.data):
+            raise ValidationError(_("Invalid private code."))
+
     @property
     def logging_preference(self):
         """Get the LoggingMode object corresponding to current form data."""
@@ -171,12 +189,20 @@ class EditProjectForm(FlaskForm):
             and field.data == CurrencyConverter.no_currency
             and project.has_multiple_currencies()
         ):
-            raise ValidationError(
-                _(
-                    "This project cannot be set to 'no currency'"
-                    " because it contains bills in multiple currencies."
-                )
+            msg = _(
+                "This project cannot be set to 'no currency'"
+                " because it contains bills in multiple currencies."
             )
+            raise ValidationError(msg)
+        if (
+            project is not None
+            and field.data != project.default_currency
+            and project.has_bills()
+        ):
+            msg = _(
+                "Cannot change project currency because currency conversion is broken"
+            )
+            raise ValidationError(msg)
 
     def update(self, project):
         """Update the project with the information from the form"""
@@ -211,7 +237,9 @@ class ImportProjectForm(FlaskForm):
 
 class ProjectForm(EditProjectForm):
     id = StringField(_("Project identifier"), validators=[DataRequired()])
-    # This field overrides the one from EditProjectForm
+    # Remove this field that is inherited from EditProjectForm
+    current_password = None
+    # This field overrides the one from EditProjectForm (to make it mandatory)
     password = PasswordField(_("Private code"), validators=[DataRequired()])
     submit = SubmitField(_("Create the project"))
 
@@ -253,7 +281,7 @@ class ProjectFormWithCaptcha(ProjectForm):
     )
 
     def validate_captcha(self, field):
-        if not field.data.lower() == _("euro"):
+        if not field.data.lower() == _("euro").lower():
             message = _("Please, validate the captcha to proceed.")
             raise ValidationError(Markup(message))
 
@@ -294,7 +322,9 @@ class AuthenticationForm(FlaskForm):
 
 
 class AdminAuthenticationForm(FlaskForm):
-    admin_password = PasswordField(_("Admin password"), validators=[DataRequired()])
+    admin_password = PasswordField(
+        _("Admin password"), validators=[DataRequired()], render_kw={"autofocus": True}
+    )
     submit = SubmitField(_("Get in"))
 
 
@@ -335,6 +365,12 @@ class BillForm(FlaskForm):
     payed_for = SelectMultipleField(
         _("For whom?"), validators=[DataRequired()], coerce=int
     )
+    bill_type = SelectField(
+        _("Bill Type"),
+        choices=BillType.choices(),
+        coerce=BillType,
+        default=BillType.EXPENSE,
+    )
     submit = SubmitField(_("Submit"))
     submit2 = SubmitField(_("Submit and add a new one"))
 
@@ -348,12 +384,14 @@ class BillForm(FlaskForm):
             payer_id=self.payer.data,
             project_default_currency=project.default_currency,
             what=self.what.data,
+            bill_type=self.bill_type.data,
         )
 
     def save(self, bill, project):
         bill.payer_id = self.payer.data
         bill.amount = self.amount.data
         bill.what = self.what.data
+        bill.bill_type = BillType(self.bill_type.data)
         bill.external_link = self.external_link.data
         bill.date = self.date.data
         bill.owers = Person.query.get_by_ids(self.payed_for.data, project)
@@ -367,6 +405,7 @@ class BillForm(FlaskForm):
         self.payer.data = bill.payer_id
         self.amount.data = bill.amount
         self.what.data = bill.what
+        self.bill_type.data = bill.bill_type
         self.external_link.data = bill.external_link
         self.original_currency.data = bill.original_currency
         self.date.data = bill.date
@@ -384,11 +423,36 @@ class BillForm(FlaskForm):
         self.payed_for.data = self.payed_for.default
 
     def validate_amount(self, field):
-        if field.data == "0":
-            raise ValidationError(_("Bills can't be null"))
-        elif decimal.Decimal(field.data) > decimal.MAX_EMAX:
+        if decimal.Decimal(field.data) > decimal.MAX_EMAX:
             # See https://github.com/python-babel/babel/issues/821
             raise ValidationError(f"Result is too high: {field.data}")
+
+    def validate_original_currency(self, field):
+        # Workaround for currency API breakage
+        # See #1232
+        if field.data not in [CurrencyConverter.no_currency, self.project_currency]:
+            msg = _(
+                "Failed to convert from %(bill_currency)s currency to %(project_currency)s",
+                bill_currency=field.data,
+                project_currency=self.project_currency,
+            )
+            raise ValidationError(msg)
+
+
+class HiddenCommaDecimalField(HiddenField, CommaDecimalField):
+    pass
+
+
+class HiddenIntegerField(HiddenField, IntegerField):
+    pass
+
+
+class SettlementForm(FlaskForm):
+    """Used internally for validation, not directly visible to users"""
+
+    amount = HiddenCommaDecimalField("Amount", validators=[DataRequired()])
+    sender_id = HiddenIntegerField("Sender", validators=[DataRequired()])
+    receiver_id = HiddenIntegerField("Receiver", validators=[DataRequired()])
 
 
 class MemberForm(FlaskForm):
@@ -431,7 +495,7 @@ class MemberForm(FlaskForm):
 
 class InviteForm(FlaskForm):
     emails = StringField(_("People to notify"), render_kw={"class": "tag"})
-    submit = SubmitField(_("Send invites"))
+    submit = SubmitField(_("Send the invitations"))
 
     def validate_emails(self, field):
         for email in [email.strip() for email in self.emails.data.split(",")]:
@@ -439,8 +503,12 @@ class InviteForm(FlaskForm):
                 email_validator.validate_email(email)
             except email_validator.EmailNotValidError:
                 raise ValidationError(
-                    _("The email %(email)s is not valid", email=email)
+                    _("The email %(email)s is not valid", email=em_surround(email))
                 )
+
+
+class LogoutForm(FlaskForm):
+    submit = SubmitField(_("Logout"))
 
 
 class EmptyForm(FlaskForm):

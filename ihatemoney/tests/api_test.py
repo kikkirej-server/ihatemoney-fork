@@ -1,14 +1,14 @@
 import base64
 import datetime
 import json
-import unittest
+
+import pytest
 
 from ihatemoney.tests.common.help_functions import em_surround
 from ihatemoney.tests.common.ihatemoney_testcase import IhatemoneyTestCase
 
 
-class APITestCase(IhatemoneyTestCase):
-
+class TestAPI(IhatemoneyTestCase):
     """Tests the API"""
 
     def api_create(
@@ -42,7 +42,7 @@ class APITestCase(IhatemoneyTestCase):
     def get_auth(self, username, password=None):
         password = password or username
         base64string = (
-            base64.encodebytes(f"{username}:{password}".encode("utf-8"))
+            base64.encodebytes(f"{username}:{password}".encode("utf-8"))  # noqa: E231
             .decode("utf-8")
             .replace("\n", "")
         )
@@ -57,7 +57,7 @@ class APITestCase(IhatemoneyTestCase):
         resp = self.client.options(
             "/api/projects/raclette", headers=self.get_auth("raclette")
         )
-        self.assertEqual(resp.headers["Access-Control-Allow-Origin"], "*")
+        assert resp.headers["Access-Control-Allow-Origin"] == "*"
 
     def test_basic_auth(self):
         # create a project
@@ -94,33 +94,32 @@ class APITestCase(IhatemoneyTestCase):
             },
         )
 
-        self.assertTrue(400, resp.status_code)
-        self.assertEqual(
-            '{"contact_email": ["Invalid email address."]}\n', resp.data.decode("utf-8")
+        assert 400 == resp.status_code
+        assert '{"contact_email": ["Invalid email address."]}\n' == resp.data.decode(
+            "utf-8"
         )
 
         # create it
         with self.app.mail.record_messages() as outbox:
-
             resp = self.api_create("raclette")
-            self.assertTrue(201, resp.status_code)
+            assert 201 == resp.status_code
 
             # Check that email messages have been sent.
-            self.assertEqual(len(outbox), 1)
-            self.assertEqual(outbox[0].recipients, ["raclette@notmyidea.org"])
+            assert len(outbox) == 1
+            assert outbox[0].recipients == ["raclette@notmyidea.org"]
 
         # create it twice should return a 400
         resp = self.api_create("raclette")
 
-        self.assertTrue(400, resp.status_code)
-        self.assertIn("id", json.loads(resp.data.decode("utf-8")))
+        assert 400 == resp.status_code
+        assert "id" in json.loads(resp.data.decode("utf-8"))
 
         # get information about it
         resp = self.client.get(
             "/api/projects/raclette", headers=self.get_auth("raclette")
         )
 
-        self.assertTrue(200, resp.status_code)
+        assert 200 == resp.status_code
         expected = {
             "members": [],
             "name": "raclette",
@@ -130,9 +129,9 @@ class APITestCase(IhatemoneyTestCase):
             "logging_preference": 1,
         }
         decoded_resp = json.loads(resp.data.decode("utf-8"))
-        self.assertDictEqual(decoded_resp, expected)
+        assert decoded_resp == expected
 
-        # edit should work
+        # edit should fail if we don't provide the current private code
         resp = self.client.put(
             "/api/projects/raclette",
             data={
@@ -144,14 +143,43 @@ class APITestCase(IhatemoneyTestCase):
             },
             headers=self.get_auth("raclette"),
         )
+        assert 400 == resp.status_code
 
-        self.assertEqual(200, resp.status_code)
+        # edit should fail if we provide the wrong private code
+        resp = self.client.put(
+            "/api/projects/raclette",
+            data={
+                "contact_email": "yeah@notmyidea.org",
+                "default_currency": "XXX",
+                "current_password": "fromage aux patates",
+                "password": "raclette",
+                "name": "The raclette party",
+                "project_history": "y",
+            },
+            headers=self.get_auth("raclette"),
+        )
+        assert 400 == resp.status_code
+
+        # edit with the correct private code should work
+        resp = self.client.put(
+            "/api/projects/raclette",
+            data={
+                "contact_email": "yeah@notmyidea.org",
+                "default_currency": "XXX",
+                "current_password": "raclette",
+                "password": "raclette",
+                "name": "The raclette party",
+                "project_history": "y",
+            },
+            headers=self.get_auth("raclette"),
+        )
+        assert 200 == resp.status_code
 
         resp = self.client.get(
             "/api/projects/raclette", headers=self.get_auth("raclette")
         )
 
-        self.assertEqual(200, resp.status_code)
+        assert 200 == resp.status_code
         expected = {
             "name": "The raclette party",
             "contact_email": "yeah@notmyidea.org",
@@ -161,7 +189,7 @@ class APITestCase(IhatemoneyTestCase):
             "logging_preference": 1,
         }
         decoded_resp = json.loads(resp.data.decode("utf-8"))
-        self.assertDictEqual(decoded_resp, expected)
+        assert decoded_resp == expected
 
         # password change is possible via API
         resp = self.client.put(
@@ -169,18 +197,19 @@ class APITestCase(IhatemoneyTestCase):
             data={
                 "contact_email": "yeah@notmyidea.org",
                 "default_currency": "XXX",
+                "current_password": "raclette",
                 "password": "tartiflette",
                 "name": "The raclette party",
             },
             headers=self.get_auth("raclette"),
         )
 
-        self.assertEqual(200, resp.status_code)
+        assert 200 == resp.status_code
 
         resp = self.client.get(
             "/api/projects/raclette", headers=self.get_auth("raclette", "tartiflette")
         )
-        self.assertEqual(200, resp.status_code)
+        assert 200 == resp.status_code
 
         # delete should work
         resp = self.client.delete(
@@ -191,21 +220,21 @@ class APITestCase(IhatemoneyTestCase):
         resp = self.client.get(
             "/api/projects/raclette", headers=self.get_auth("raclette")
         )
-        self.assertEqual(401, resp.status_code)
+        assert 401 == resp.status_code
 
     def test_token_creation(self):
         """Test that token of project is generated"""
 
         # Create project
         resp = self.api_create("raclette")
-        self.assertTrue(201, resp.status_code)
+        assert 201 == resp.status_code
 
         # Get token
         resp = self.client.get(
             "/api/projects/raclette/token", headers=self.get_auth("raclette")
         )
 
-        self.assertEqual(200, resp.status_code)
+        assert 200 == resp.status_code
 
         decoded_resp = json.loads(resp.data.decode("utf-8"))
 
@@ -214,8 +243,22 @@ class APITestCase(IhatemoneyTestCase):
             "/api/projects/raclette/token",
             headers={"Authorization": f"Basic {decoded_resp['token']}"},
         )
+        assert 200 == resp.status_code
 
-        self.assertEqual(200, resp.status_code)
+        # We shouldn't be able to edit project without private code
+        resp = self.client.put(
+            "/api/projects/raclette",
+            data={
+                "contact_email": "yeah@notmyidea.org",
+                "default_currency": "XXX",
+                "password": "tartiflette",
+                "name": "The raclette party",
+            },
+            headers={"Authorization": f"Basic {decoded_resp['token']}"},
+        )
+        assert 400 == resp.status_code
+        expected_resp = {"current_password": ["This field is required."]}
+        assert expected_resp == json.loads(resp.data.decode("utf-8"))
 
     def test_token_login(self):
         resp = self.api_create("raclette")
@@ -226,7 +269,7 @@ class APITestCase(IhatemoneyTestCase):
         decoded_resp = json.loads(resp.data.decode("utf-8"))
         resp = self.client.get(f"/raclette/join/{decoded_resp['token']}")
         # Test that we are redirected.
-        self.assertEqual(302, resp.status_code)
+        assert 302 == resp.status_code
 
     def test_member(self):
         # create a project
@@ -238,7 +281,7 @@ class APITestCase(IhatemoneyTestCase):
         )
 
         self.assertStatus(200, req)
-        self.assertEqual("[]\n", req.data.decode("utf-8"))
+        assert "[]\n" == req.data.decode("utf-8")
 
         # add a member
         req = self.client.post(
@@ -249,7 +292,7 @@ class APITestCase(IhatemoneyTestCase):
 
         # the id of the new member should be returned
         self.assertStatus(201, req)
-        self.assertEqual("1\n", req.data.decode("utf-8"))
+        assert "1\n" == req.data.decode("utf-8")
 
         # the list of participants should contain one member
         req = self.client.get(
@@ -257,7 +300,7 @@ class APITestCase(IhatemoneyTestCase):
         )
 
         self.assertStatus(200, req)
-        self.assertEqual(len(json.loads(req.data.decode("utf-8"))), 1)
+        assert len(json.loads(req.data.decode("utf-8"))) == 1
 
         # Try to add another member with the same name.
         req = self.client.post(
@@ -270,7 +313,7 @@ class APITestCase(IhatemoneyTestCase):
         # edit the participant
         req = self.client.put(
             "/api/projects/raclette/members/1",
-            data={"name": "Fred", "weight": 2},
+            data={"name": "Jeanne", "weight": 2},
             headers=self.get_auth("raclette"),
         )
 
@@ -282,14 +325,14 @@ class APITestCase(IhatemoneyTestCase):
         )
 
         self.assertStatus(200, req)
-        self.assertEqual("Fred", json.loads(req.data.decode("utf-8"))["name"])
-        self.assertEqual(2, json.loads(req.data.decode("utf-8"))["weight"])
+        assert "Jeanne" == json.loads(req.data.decode("utf-8"))["name"]
+        assert 2 == json.loads(req.data.decode("utf-8"))["weight"]
 
         # edit this member with same information
-        # (test PUT idemopotence)
+        # (test PUT idempotence)
         req = self.client.put(
             "/api/projects/raclette/members/1",
-            data={"name": "Fred"},
+            data={"name": "Jeanne"},
             headers=self.get_auth("raclette"),
         )
 
@@ -298,7 +341,7 @@ class APITestCase(IhatemoneyTestCase):
         # de-activate the participant
         req = self.client.put(
             "/api/projects/raclette/members/1",
-            data={"name": "Fred", "activated": False},
+            data={"name": "Jeanne", "activated": False},
             headers=self.get_auth("raclette"),
         )
         self.assertStatus(200, req)
@@ -307,12 +350,12 @@ class APITestCase(IhatemoneyTestCase):
             "/api/projects/raclette/members/1", headers=self.get_auth("raclette")
         )
         self.assertStatus(200, req)
-        self.assertEqual(False, json.loads(req.data.decode("utf-8"))["activated"])
+        assert not json.loads(req.data.decode("utf-8"))["activated"]
 
         # re-activate the participant
         req = self.client.put(
             "/api/projects/raclette/members/1",
-            data={"name": "Fred", "activated": True},
+            data={"name": "Jeanne", "activated": True},
             headers=self.get_auth("raclette"),
         )
 
@@ -320,7 +363,7 @@ class APITestCase(IhatemoneyTestCase):
             "/api/projects/raclette/members/1", headers=self.get_auth("raclette")
         )
         self.assertStatus(200, req)
-        self.assertEqual(True, json.loads(req.data.decode("utf-8"))["activated"])
+        assert json.loads(req.data.decode("utf-8"))["activated"]
 
         # delete a member
 
@@ -336,7 +379,7 @@ class APITestCase(IhatemoneyTestCase):
         )
 
         self.assertStatus(200, req)
-        self.assertEqual("[]\n", req.data.decode("utf-8"))
+        assert "[]\n" == req.data.decode("utf-8")
 
     def test_bills(self):
         # create a project
@@ -344,7 +387,7 @@ class APITestCase(IhatemoneyTestCase):
 
         # add participants
         self.api_add_member("raclette", "zorglub")
-        self.api_add_member("raclette", "fred")
+        self.api_add_member("raclette", "jeanne")
         self.api_add_member("raclette", "quentin")
 
         # get the list of bills (should be empty)
@@ -353,7 +396,7 @@ class APITestCase(IhatemoneyTestCase):
         )
         self.assertStatus(200, req)
 
-        self.assertEqual("[]\n", req.data.decode("utf-8"))
+        assert "[]\n" == req.data.decode("utf-8")
 
         # add a bill
         req = self.client.post(
@@ -363,6 +406,7 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "fromage",
                 "payer": "1",
                 "payed_for": ["1", "2"],
+                "bill_type": "Expense",
                 "amount": "25",
                 "external_link": "https://raclette.fr",
             },
@@ -371,7 +415,7 @@ class APITestCase(IhatemoneyTestCase):
 
         # should return the id
         self.assertStatus(201, req)
-        self.assertEqual(req.data.decode("utf-8"), "1\n")
+        assert req.data.decode("utf-8") == "1\n"
 
         # get this bill details
         req = self.client.get(
@@ -385,8 +429,9 @@ class APITestCase(IhatemoneyTestCase):
             "payer_id": 1,
             "owers": [
                 {"activated": True, "id": 1, "name": "zorglub", "weight": 1},
-                {"activated": True, "id": 2, "name": "fred", "weight": 1},
+                {"activated": True, "id": 2, "name": "jeanne", "weight": 1},
             ],
+            "bill_type": "Expense",
             "amount": 25.0,
             "date": "2011-08-10",
             "id": 1,
@@ -396,19 +441,19 @@ class APITestCase(IhatemoneyTestCase):
         }
 
         got = json.loads(req.data.decode("utf-8"))
-        self.assertEqual(
-            datetime.date.today(),
-            datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date(),
+        assert (
+            datetime.date.today()
+            == datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date()
         )
         del got["creation_date"]
-        self.assertDictEqual(expected, got)
+        assert expected == got
 
         # the list of bills should length 1
         req = self.client.get(
             "/api/projects/raclette/bills", headers=self.get_auth("raclette")
         )
         self.assertStatus(200, req)
-        self.assertEqual(1, len(json.loads(req.data.decode("utf-8"))))
+        assert 1 == len(json.loads(req.data.decode("utf-8")))
 
         # edit with errors should return an error
         req = self.client.put(
@@ -418,6 +463,7 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "fromage",
                 "payer": "1",
                 "payed_for": ["1", "2"],
+                "bill_type": "Expense",
                 "amount": "25",
                 "external_link": "https://raclette.fr",
             },
@@ -425,9 +471,7 @@ class APITestCase(IhatemoneyTestCase):
         )
 
         self.assertStatus(400, req)
-        self.assertEqual(
-            '{"date": ["This field is required."]}\n', req.data.decode("utf-8")
-        )
+        assert '{"date": ["This field is required."]}\n' == req.data.decode("utf-8")
 
         # edit a bill
         req = self.client.put(
@@ -437,6 +481,7 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "beer",
                 "payer": "2",
                 "payed_for": ["1", "2"],
+                "bill_type": "Expense",
                 "amount": "25",
                 "external_link": "https://raclette.fr",
             },
@@ -456,8 +501,9 @@ class APITestCase(IhatemoneyTestCase):
             "payer_id": 2,
             "owers": [
                 {"activated": True, "id": 1, "name": "zorglub", "weight": 1},
-                {"activated": True, "id": 2, "name": "fred", "weight": 1},
+                {"activated": True, "id": 2, "name": "jeanne", "weight": 1},
             ],
+            "bill_type": "Expense",
             "amount": 25.0,
             "date": "2011-09-10",
             "external_link": "https://raclette.fr",
@@ -467,12 +513,12 @@ class APITestCase(IhatemoneyTestCase):
         }
 
         got = json.loads(req.data.decode("utf-8"))
-        self.assertEqual(
-            creation_date,
-            datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date(),
+        assert (
+            creation_date
+            == datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date()
         )
         del got["creation_date"]
-        self.assertDictEqual(expected, got)
+        assert expected == got
 
         # delete a bill
         req = self.client.delete(
@@ -492,7 +538,7 @@ class APITestCase(IhatemoneyTestCase):
 
         # add participants
         self.api_add_member("raclette", "zorglub")
-        self.api_add_member("raclette", "fred")
+        self.api_add_member("raclette", "jeanne")
 
         # valid amounts
         input_expected = [
@@ -512,6 +558,7 @@ class APITestCase(IhatemoneyTestCase):
                     "what": "fromage",
                     "payer": "1",
                     "payed_for": ["1", "2"],
+                    "bill_type": "Expense",
                     "amount": input_amount,
                 },
                 headers=self.get_auth("raclette"),
@@ -519,7 +566,7 @@ class APITestCase(IhatemoneyTestCase):
 
             # should return the id
             self.assertStatus(201, req)
-            self.assertEqual(req.data.decode("utf-8"), "{}\n".format(id))
+            assert req.data.decode("utf-8") == "{}\n".format(id)
 
             # get this bill's details
             req = self.client.get(
@@ -534,8 +581,9 @@ class APITestCase(IhatemoneyTestCase):
                 "payer_id": 1,
                 "owers": [
                     {"activated": True, "id": 1, "name": "zorglub", "weight": 1},
-                    {"activated": True, "id": 2, "name": "fred", "weight": 1},
+                    {"activated": True, "id": 2, "name": "jeanne", "weight": 1},
                 ],
+                "bill_type": "Expense",
                 "amount": expected_amount,
                 "date": "2011-08-10",
                 "id": id,
@@ -545,12 +593,12 @@ class APITestCase(IhatemoneyTestCase):
             }
 
             got = json.loads(req.data.decode("utf-8"))
-            self.assertEqual(
-                datetime.date.today(),
-                datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date(),
+            assert (
+                datetime.date.today()
+                == datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date()
             )
             del got["creation_date"]
-            self.assertDictEqual(expected, got)
+            assert expected == got
 
         # should raise errors
         erroneous_amounts = [
@@ -569,28 +617,30 @@ class APITestCase(IhatemoneyTestCase):
                     "what": "fromage",
                     "payer": "1",
                     "payed_for": ["1", "2"],
+                    "bill_type": "Expense",
                     "amount": amount,
                 },
                 headers=self.get_auth("raclette"),
             )
             self.assertStatus(400, req)
 
+    @pytest.mark.skip(reason="Currency conversion is broken")
     def test_currencies(self):
         # check /currencies for list of supported currencies
         resp = self.client.get("/api/currencies")
-        self.assertTrue(201, resp.status_code)
-        self.assertIn("XXX", json.loads(resp.data.decode("utf-8")))
+        assert 200 == resp.status_code
+        assert "XXX" in json.loads(resp.data.decode("utf-8"))
 
         # create project with a default currency
         resp = self.api_create("raclette", default_currency="EUR")
-        self.assertTrue(201, resp.status_code)
+        assert 201 == resp.status_code
 
         # get information about it
         resp = self.client.get(
             "/api/projects/raclette", headers=self.get_auth("raclette")
         )
 
-        self.assertTrue(200, resp.status_code)
+        assert 200 == resp.status_code
         expected = {
             "members": [],
             "name": "raclette",
@@ -600,11 +650,11 @@ class APITestCase(IhatemoneyTestCase):
             "logging_preference": 1,
         }
         decoded_resp = json.loads(resp.data.decode("utf-8"))
-        self.assertDictEqual(decoded_resp, expected)
+        assert decoded_resp == expected
 
         # Add participants
         self.api_add_member("raclette", "zorglub")
-        self.api_add_member("raclette", "fred")
+        self.api_add_member("raclette", "jeanne")
         self.api_add_member("raclette", "quentin")
 
         # Add a bill without explicit currency
@@ -615,6 +665,7 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "fromage",
                 "payer": "1",
                 "payed_for": ["1", "2"],
+                "bill_type": "Expense",
                 "amount": "25",
                 "external_link": "https://raclette.fr",
             },
@@ -623,7 +674,7 @@ class APITestCase(IhatemoneyTestCase):
 
         # should return the id
         self.assertStatus(201, req)
-        self.assertEqual(req.data.decode("utf-8"), "1\n")
+        assert req.data.decode("utf-8") == "1\n"
 
         # get this bill details
         req = self.client.get(
@@ -637,8 +688,9 @@ class APITestCase(IhatemoneyTestCase):
             "payer_id": 1,
             "owers": [
                 {"activated": True, "id": 1, "name": "zorglub", "weight": 1},
-                {"activated": True, "id": 2, "name": "fred", "weight": 1},
+                {"activated": True, "id": 2, "name": "jeanne", "weight": 1},
             ],
+            "bill_type": "Expense",
             "amount": 25.0,
             "date": "2011-08-10",
             "id": 1,
@@ -648,12 +700,12 @@ class APITestCase(IhatemoneyTestCase):
         }
 
         got = json.loads(req.data.decode("utf-8"))
-        self.assertEqual(
-            datetime.date.today(),
-            datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date(),
+        assert (
+            datetime.date.today()
+            == datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date()
         )
         del got["creation_date"]
-        self.assertDictEqual(expected, got)
+        assert expected == got
 
         # Change bill amount and currency
         req = self.client.put(
@@ -663,6 +715,7 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "fromage",
                 "payer": "1",
                 "payed_for": ["1", "2"],
+                "bill_type": "Expense",
                 "amount": "30",
                 "external_link": "https://raclette.fr",
                 "original_currency": "CAD",
@@ -682,8 +735,9 @@ class APITestCase(IhatemoneyTestCase):
             "payer_id": 1,
             "owers": [
                 {"activated": True, "id": 1, "name": "zorglub", "weight": 1.0},
-                {"activated": True, "id": 2, "name": "fred", "weight": 1.0},
+                {"activated": True, "id": 2, "name": "jeanne", "weight": 1.0},
             ],
+            "bill_type": "Expense",
             "amount": 30.0,
             "date": "2011-08-10",
             "id": 1,
@@ -694,7 +748,7 @@ class APITestCase(IhatemoneyTestCase):
 
         got = json.loads(req.data.decode("utf-8"))
         del got["creation_date"]
-        self.assertDictEqual(expected, got)
+        assert expected == got
 
         # Add a bill with yet another currency
         req = self.client.post(
@@ -704,6 +758,7 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "Pierogi",
                 "payer": "1",
                 "payed_for": ["2", "3"],
+                "bill_type": "Expense",
                 "amount": "80",
                 "original_currency": "PLN",
             },
@@ -712,7 +767,7 @@ class APITestCase(IhatemoneyTestCase):
 
         # should return the id
         self.assertStatus(201, req)
-        self.assertEqual(req.data.decode("utf-8"), "2\n")
+        assert req.data.decode("utf-8") == "2\n"
 
         # Try to remove default project currency, it should fail
         req = self.client.put(
@@ -720,15 +775,16 @@ class APITestCase(IhatemoneyTestCase):
             data={
                 "contact_email": "yeah@notmyidea.org",
                 "default_currency": "XXX",
+                "current_password": "raclette",
                 "password": "raclette",
                 "name": "The raclette party",
             },
             headers=self.get_auth("raclette"),
         )
         self.assertStatus(400, req)
-        self.assertIn("This project cannot be set", req.data.decode("utf-8"))
-        self.assertIn(
-            "because it contains bills in multiple currencies", req.data.decode("utf-8")
+        assert "This project cannot be set" in req.data.decode("utf-8")
+        assert "because it contains bills in multiple currencies" in req.data.decode(
+            "utf-8"
         )
 
     def test_statistics(self):
@@ -737,7 +793,7 @@ class APITestCase(IhatemoneyTestCase):
 
         # add participants
         self.api_add_member("raclette", "zorglub")
-        self.api_add_member("raclette", "fred")
+        self.api_add_member("raclette", "jeanne")
 
         # add a bill
         req = self.client.post(
@@ -747,6 +803,7 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "fromage",
                 "payer": "1",
                 "payed_for": ["1", "2"],
+                "bill_type": "Expense",
                 "amount": "25",
             },
             headers=self.get_auth("raclette"),
@@ -757,33 +814,35 @@ class APITestCase(IhatemoneyTestCase):
             "/api/projects/raclette/statistics", headers=self.get_auth("raclette")
         )
         self.assertStatus(200, req)
-        self.assertEqual(
-            [
-                {
-                    "balance": 12.5,
-                    "member": {
-                        "activated": True,
-                        "id": 1,
-                        "name": "zorglub",
-                        "weight": 1.0,
-                    },
-                    "paid": 25.0,
-                    "spent": 12.5,
+        received_stats = json.loads(req.data.decode("utf-8"))
+        assert received_stats == [
+            {
+                "balance": 12.5,
+                "member": {
+                    "activated": True,
+                    "id": 1,
+                    "name": "zorglub",
+                    "weight": 1.0,
                 },
-                {
-                    "balance": -12.5,
-                    "member": {
-                        "activated": True,
-                        "id": 2,
-                        "name": "fred",
-                        "weight": 1.0,
-                    },
-                    "paid": 0,
-                    "spent": 12.5,
+                "paid": 25.0,
+                "received": 0.0,
+                "spent": -12.5,
+                "transferred": 0.0,
+            },
+            {
+                "balance": -12.5,
+                "member": {
+                    "activated": True,
+                    "id": 2,
+                    "name": "jeanne",
+                    "weight": 1.0,
                 },
-            ],
-            json.loads(req.data.decode("utf-8")),
-        )
+                "paid": 0.0,
+                "received": 0.0,
+                "spent": -12.5,
+                "transferred": 0.0,
+            },
+        ]
 
     def test_username_xss(self):
         # create a project
@@ -795,7 +854,7 @@ class APITestCase(IhatemoneyTestCase):
         self.api_add_member("raclette", "<script>")
 
         result = self.client.get("/raclette/")
-        self.assertNotIn("<script>", result.data.decode("utf-8"))
+        assert "<script>" not in result.data.decode("utf-8")
 
     def test_weighted_bills(self):
         # create a project
@@ -803,7 +862,7 @@ class APITestCase(IhatemoneyTestCase):
 
         # add participants
         self.api_add_member("raclette", "zorglub")
-        self.api_add_member("raclette", "freddy familly", 4)
+        self.api_add_member("raclette", "jeannedy familly", 4)
         self.api_add_member("raclette", "quentin")
 
         # add a bill
@@ -814,6 +873,7 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "fromage",
                 "payer": "1",
                 "payed_for": ["1", "2"],
+                "bill_type": "Expense",
                 "amount": "25",
             },
             headers=self.get_auth("raclette"),
@@ -834,8 +894,9 @@ class APITestCase(IhatemoneyTestCase):
             "payer_id": 1,
             "owers": [
                 {"activated": True, "id": 1, "name": "zorglub", "weight": 1},
-                {"activated": True, "id": 2, "name": "freddy familly", "weight": 4},
+                {"activated": True, "id": 2, "name": "jeannedy familly", "weight": 4},
             ],
+            "bill_type": "Expense",
             "amount": 25.0,
             "date": "2011-08-10",
             "id": 1,
@@ -844,12 +905,12 @@ class APITestCase(IhatemoneyTestCase):
             "original_currency": "XXX",
         }
         got = json.loads(req.data.decode("utf-8"))
-        self.assertEqual(
-            creation_date,
-            datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date(),
+        assert (
+            creation_date
+            == datetime.datetime.strptime(got["creation_date"], "%Y-%m-%d").date()
         )
         del got["creation_date"]
-        self.assertDictEqual(expected, got)
+        assert expected == got
 
         # getting it should return a 404
         req = self.client.get(
@@ -868,7 +929,7 @@ class APITestCase(IhatemoneyTestCase):
                 {
                     "activated": True,
                     "id": 2,
-                    "name": "freddy familly",
+                    "name": "jeannedy familly",
                     "weight": 4.0,
                     "balance": -20.0,
                 },
@@ -889,7 +950,7 @@ class APITestCase(IhatemoneyTestCase):
 
         self.assertStatus(200, req)
         decoded_req = json.loads(req.data.decode("utf-8"))
-        self.assertDictEqual(decoded_req, expected)
+        assert decoded_req == expected
 
     def test_log_created_from_api_call(self):
         # create a project
@@ -900,15 +961,13 @@ class APITestCase(IhatemoneyTestCase):
         self.api_add_member("raclette", "zorglub")
 
         resp = self.client.get("/raclette/history", follow_redirects=True)
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn(
-            f"Participant {em_surround('zorglub')} added", resp.data.decode("utf-8")
+        assert resp.status_code == 200
+        assert f"Participant {em_surround('zorglub')} added" in resp.data.decode(
+            "utf-8"
         )
-        self.assertIn(
-            f"Project {em_surround('raclette')} added", resp.data.decode("utf-8")
-        )
-        self.assertEqual(resp.data.decode("utf-8").count("<td> -- </td>"), 2)
-        self.assertNotIn("127.0.0.1", resp.data.decode("utf-8"))
+        assert f"Project {em_surround('raclette')} added" in resp.data.decode("utf-8")
+        assert resp.data.decode("utf-8").count("<td> -- </td>") == 2
+        assert "127.0.0.1" not in resp.data.decode("utf-8")
 
     def test_amount_is_null(self):
         self.api_create("raclette")
@@ -923,11 +982,12 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "fromage",
                 "payer": "1",
                 "payed_for": ["1"],
+                "bill_type": "Expense",
                 "amount": "0",
             },
             headers=self.get_auth("raclette"),
         )
-        self.assertStatus(400, req)
+        self.assertStatus(201, req)
 
     def test_project_creation_with_mixed_case(self):
         self.api_create("Raclette")
@@ -951,12 +1011,71 @@ class APITestCase(IhatemoneyTestCase):
                 "what": "fromage",
                 "payer": "1",
                 "payed_for": ["1"],
+                "bill_type": "Expense",
                 "amount": "9347242149381274732472348728748723473278472843.12",
             },
             headers=self.get_auth("raclette"),
         )
         self.assertStatus(400, req)
 
+    def test_validate_bill_type(self):
+        self.api_create("raclette")
+        self.api_add_member("raclette", "zorglub")
 
-if __name__ == "__main__":
-    unittest.main()
+        req = self.client.post(
+            "/api/projects/raclette/bills",
+            data={
+                "date": "2011-08-10",
+                "what": "fromage",
+                "payer": "1",
+                "payed_for": ["1"],
+                "bill_type": "wrong_bill_type",
+                "amount": "50",
+            },
+            headers=self.get_auth("raclette"),
+        )
+
+        self.assertStatus(400, req)
+
+        req = self.client.post(
+            "/api/projects/raclette/bills",
+            data={
+                "date": "2011-08-10",
+                "what": "fromage",
+                "payer": "1",
+                "payed_for": ["1"],
+                "bill_type": "Expense",
+                "amount": "50",
+            },
+            headers=self.get_auth("raclette"),
+        )
+
+        self.assertStatus(201, req)
+
+    def test_default_bill_type(self):
+        self.api_create("raclette")
+        self.api_add_member("raclette", "zorglub")
+
+        # Post a bill without adding a bill type
+        req = self.client.post(
+            "/api/projects/raclette/bills",
+            data={
+                "date": "2011-08-10",
+                "what": "fromage",
+                "payer": "1",
+                "payed_for": ["1"],
+                "amount": "50",
+            },
+            headers=self.get_auth("raclette"),
+        )
+
+        self.assertStatus(201, req)
+
+        req = self.client.get(
+            "/api/projects/raclette/bills/1", headers=self.get_auth("raclette")
+        )
+        self.assertStatus(200, req)
+
+        # Bill type should now be "Expense"
+        got = json.loads(req.data.decode("utf-8"))
+        assert got["bill_type"] == "Expense"

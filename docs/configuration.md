@@ -30,9 +30,9 @@ Specifies the type of backend to use and its location. More information
 on the format used can be found on [the SQLAlchemy
 documentation](http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls).
 
--   **Default value:** `sqlite:///tmp/ihatemoney.db`
+-   **Default value:** `sqlite:////tmp/ihatemoney.db`
 -   **Production value:** Set it to some path on your disk. Typically
-    `sqlite:///home/ihatemoney/ihatemoney.db`. Do *not* store it under
+    `sqlite:////home/ihatemoney/ihatemoney.db`. Do *not* store it under
     `/tmp` as this folder is cleared at each boot.
 
 For example, if you're using MariaDB, use a configuration similar to
@@ -127,11 +127,11 @@ ADMIN_PASSWORD needs to be set.
 
 ## APPLICATION_ROOT
 
-If empty, ihatemoney will be served at domain root (e.g:
-*http://domain.tld*), if set to `"somestring"`, it will be served from a
+By default, ihatemoney will be served at domain root (e.g:
+*http://domain.tld*), if set to `"/somestring"`, it will be served from a
 "folder" (e.g: *http://domain.tld/somestring*).
 
--   **Default value:** `""` (empty string)
+-   **Default value:** `"/"`
 
 ## BABEL_DEFAULT_TIMEZONE
 
@@ -173,6 +173,14 @@ URL you want.
 -   **Default value:** `""` (empty string)
 -   **Production value:** The URL of your chosing.
 
+## SITE_NAME
+
+It is possible to change the name of the site to something at your liking.
+
+-   **Default value:** `"I Hate Money"` (empty string)
+-   **Production value:** The name of your choosing
+
+
 ## Configuring email sending
 
 By default, Ihatemoney sends emails using a local SMTP server, but it's
@@ -188,3 +196,12 @@ project](https://pythonhosted.org/flask-mail/#configuring-flask-mail)
 -   **MAIL_USERNAME** : default **None**
 -   **MAIL_PASSWORD** : default **None**
 -   **DEFAULT_MAIL_SENDER** : default **None**
+
+## Configuring password hashes
+
+The werkzeug [generate_password_hash](https://werkzeug.palletsprojects.com/utils/#werkzeug.security.generate_password_hash)
+is used to create password hashes. By default the default werkzeug values
+are used, however you can customize those values with:
+
+-  **PASSWORD_HASH_METHOD** : default **None**
+-  **PASSWORD_HASH_SALT_LENGTH** : default **None**
